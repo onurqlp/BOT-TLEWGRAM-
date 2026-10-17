@@ -118,11 +118,20 @@ test('successful group send survives failed admin confirmation without duplicate
   sent.push(String(target));
   if(String(target)==='42')throw Error('admin blocked');
  };
- ctx.botMetric_=()=>{};
+ ctx.botMetric_=()=>{throw Error('metrics unavailable');};
  ctx.botLogError_=()=>{};
  ctx.botPublish_('42','10');
  assert.ok(statuses.includes('sending'));
  assert.ok(statuses.includes('sent'));
  assert.ok(!statuses.includes('needs_review'));
  assert.equal(sent.filter(x=>x==='-100123').length,1);
+});
+
+test('outdated or future RSS articles are filtered before creating digests',()=>{
+ const now=Date.now();
+ assert.equal(ctx.botFresh_(new Date(now-86400000).toISOString()),true);
+ assert.equal(ctx.botFresh_(new Date(now-10*86400000).toISOString()),false);
+ assert.equal(ctx.botFresh_(new Date(now+2*86400000).toISOString()),false);
+ assert.equal(ctx.botFresh_(''),true);
+ assert.match(source,/botFresh_\(published\)/);
 });
