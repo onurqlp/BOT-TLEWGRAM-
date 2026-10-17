@@ -1,6 +1,6 @@
-# BOT TLEWGRAM V0.3.0 — Cloudflare ve D1 olmadan
+# BOT TLEWGRAM V0.3.1 (GitHub kaynağı) — Cloudflare ve D1 olmadan
 
-**Oluşturulan Telegram botu:** [@TLEWGRAM_bot](https://t.me/TLEWGRAM_bot). **Not:** BotFather'da bot oluşturuldu; token ve Google Apps Script bağlantısı henüz doğrulanmadı.
+**Oluşturulan Telegram botu:** [@TLEWGRAM_bot](https://t.me/TLEWGRAM_bot). **Durum:** Google Apps Script kuruldu; botun özel mesajları ve `/panel` komutu kullanıcı ekran görüntüsüyle doğrulandı. Grupla bağlantı, RSS ve AI henüz yapılandırılmadı.
 
 
 Bu alternatif Google Apps Script + Google Sheets ile çalışır. Ayrı sunucu, Cloudflare, D1, webhook veya Google Web App dağıtımı gerektirmez. Önceki Worker kaynakları yalnızca geri dönüş amacıyla depoda korunur.
@@ -56,9 +56,9 @@ Pazartesi yaklaşık saat 11.00'de yöneticiye gözlemlenen mesajlar, katılıml
 
 Google Apps Script ve Google Sheets ücretsiz kotalarla kullanılabilir ama kullanım yoğunlaştığında kota ve çalışma süresi sınırlarına takılabilir. Hesap açmak için yeni bir sunucu şirketi gerekmiyor. Google'ın ücretsiz kişisel hesaplarda toplam trigger runtime limiti 90 dakika/gündür. Yüksek mesaj hacminde POLL_MINUTES=5 tercih edilmeli.
 
-Telegram güncellemeleri kontrol başına en fazla 20 adet okunur. Yoğun gruplarda kuyruk büyüyebilir. Anti-spam gerçek zamanlı değildir: 5 dakikada bir kontrol + Google tetikleyici gecikmesi yaşanabilir; POLL_MINUTES=1 daha hızlı ama kota açısından daha pahalıdır. Google Apps Script webhook'undaki 302 yönlendirme riskini bu polling modeliyle bertaraf ediyoruz.
+Telegram güncellemeleri kontrollü döngüde çalıştırma başına en fazla **120 adet** işlenir; 25 saniye zaman sınırı da vardır. Başarısız bir güncelleme sonraki çalışmada yeniden denenir; üç başarısızlık sonunda kuyruktan çıkarılır ve hata kaydına yazılır. Yoğun gruplarda kuyruk büyüyebilir. Anti-spam gerçek zamanlı değildir: 5 dakikada bir kontrol + Google tetikleyici gecikmesi yaşanabilir; POLL_MINUTES=1 daha hızlı ama kota açısından daha pahalıdır. Google Apps Script webhook'undaki 302 yönlendirme riskini bu polling modeliyle bertaraf ediyoruz.
 
-Haber kaynakları henüz belirlenmedi, bu yüzden NEWS_FEEDS varsayılan boş ve haber üretimi kapalıdır. AI API ücretlidir; 1500 çağrı kotası dolar harcama limiti değildir.
+GitHub V0.3.1 kodu, RSS tarihleri biliniyorsa son **7 gün** içindeki içerikleri seçer ve haber başlığının Google Sheets formülü gibi çalışmasını engeller. Haber kaynakları henüz belirlenmedi, bu yüzden NEWS_FEEDS varsayılan boş ve haber üretimi kapalıdır. AI API ücretlidir; 1500 çağrı kotası dolar harcama limiti değildir.
 
 Gizli anahtarlar sadece Apps Script Script Properties'de tutulur. Google Sheet'e veya GitHub'a yazılmaz. Script editör erişimi olan kişiler anahtarlara erişebileceğinden tabloyu gereksiz kişilerle düzenleyici olarak paylaşma. Google Apps Script'in Google hesabında yayınlanması/kullanıcı izinlerinin verilmesi gerekir.
 
@@ -66,7 +66,9 @@ Gizli anahtarlar sadece Apps Script Script Properties'de tutulur. Google Sheet'e
 
 Apps Script fonksiyon listesinden stopBot çalıştır; otomatik kontroller durur. Bu, tabloyu veya Telegram botunu silmez.
 
-Sürüm: 0.3.0, 17.10.2026. GitHub koda sahip; Google Apps Script hesabında henüz çalıştırılmış değildir.
+**Sürüm ayrımı:** GitHub'daki `Code.gs` V0.3.1; Google hesabında kurulu botun son ekran görüntüsü V0.3.0 gösterdi. GitHub commitleri Google Apps Script'e otomatik yansımaz. Yeni sürüme geçmek için çalışan Apps Script kodunun yedeğini alıp yeni dosyayı kontrollü olarak yapıştırmak gerekir. **Yeniden `setupBot` çalıştırmak yalnızca tetikleyici ayarları değiştiğinde gerekir.**
+
+[İşletim, sürüm yükseltme, arıza ve geri alma rehberi](OPERATIONS.md).
 
 Resmî belgeler:
 - https://developers.google.com/apps-script/guides/triggers/installable
