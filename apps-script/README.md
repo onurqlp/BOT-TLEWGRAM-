@@ -1,4 +1,4 @@
-# BOT TLEWGRAM V0.3.1 (GitHub kaynağı) — Cloudflare ve D1 olmadan
+# BOT TLEWGRAM V0.4.0 (GitHub kaynağı) — Cloudflare ve D1 olmadan
 
 **Oluşturulan Telegram botu:** [@TLEWGRAM_bot](https://t.me/TLEWGRAM_bot). **Durum:** Google Apps Script kuruldu; botun özel mesajları ve `/panel` komutu kullanıcı ekran görüntüsüyle doğrulandı. Grupla bağlantı, RSS ve AI henüz yapılandırılmadı.
 
@@ -46,7 +46,7 @@ testBotConnection sadece token geçerliliğini kontrol eder, Telegram'a mesaj at
 
 ## 5 — Üyeyi rahatsız etmeyen düzen
 
-Gruba otomatik haber gitmez. Her gün seçili RSS kaynaklarından en fazla bir yeni taslak hazırlanır. Yönetici /panel üzerinden önce yayını açar, sonra taslağı ayrı işlemle onaylar. Grup mesajı sessiz bildirimle yayınlanır. Yeni üyelere grupta otomatik mesaj atılmaz.
+Gruba otomatik haber gitmez. Her gün seçili RSS kaynaklarından en fazla bir yeni taslak hazırlanır. Yönetici /panel üzerinden önce yayını açar; /yayinhazir ID ile taslağı inceler, /yayinonay ID ile ayrı işlemde onaylar. Grup mesajı sessiz bildirimle yayınlanır. Yeni üyelere grupta otomatik mesaj atılmaz.
 
 Üye botu özelden kendisi başlatır; /ozet, /sor soru, /bildirim, /sessiz, /sil komutlarını kullanabilir. /bildirim ile yalnızca izin veren kullanıcılara onaylı haberin kopyası (pilot: en fazla 30) gider.
 
@@ -56,9 +56,9 @@ Pazartesi yaklaşık saat 11.00'de yöneticiye gözlemlenen mesajlar, katılıml
 
 Google Apps Script ve Google Sheets ücretsiz kotalarla kullanılabilir ama kullanım yoğunlaştığında kota ve çalışma süresi sınırlarına takılabilir. Hesap açmak için yeni bir sunucu şirketi gerekmiyor. Google'ın ücretsiz kişisel hesaplarda toplam trigger runtime limiti 90 dakika/gündür. Yüksek mesaj hacminde POLL_MINUTES=5 tercih edilmeli.
 
-Telegram güncellemeleri kontrollü döngüde çalıştırma başına en fazla **120 adet** işlenir; 25 saniye zaman sınırı da vardır. Başarısız bir güncelleme sonraki çalışmada yeniden denenir; üç başarısızlık sonunda kuyruktan çıkarılır ve hata kaydına yazılır. Yoğun gruplarda kuyruk büyüyebilir. Anti-spam gerçek zamanlı değildir: 5 dakikada bir kontrol + Google tetikleyici gecikmesi yaşanabilir; POLL_MINUTES=1 daha hızlı ama kota açısından daha pahalıdır. Google Apps Script webhook'undaki 302 yönlendirme riskini bu polling modeliyle bertaraf ediyoruz.
+**V0.4.0:** Panel artık `callback_data` kullanan inline düğmeler yerine `/komut` gönderen Telegram klavyesidir. Bu değişiklik `query is too old` hatasını ortadan kaldırır, ancak yanıtların gelmesi bir sonraki polling çalışmasına bağlıdır. `/hepsiniac` yalnızca bağlı grup ve AI API anahtarı varsa ilgili seçenekleri açabilir. Kod Google Apps Script'e aktarılmadan canlıda etkinleşmez. Telegram güncellemeleri kontrollü döngüde çalıştırma başına en fazla **120 adet** işlenir; 25 saniye zaman sınırı da vardır. Başarısız bir güncelleme sonraki çalışmada yeniden denenir; üç başarısızlık sonunda kuyruktan çıkarılır ve hata kaydına yazılır. Yoğun gruplarda kuyruk büyüyebilir. Anti-spam gerçek zamanlı değildir: 5 dakikada bir kontrol + Google tetikleyici gecikmesi yaşanabilir; POLL_MINUTES=1 daha hızlı ama kota açısından daha pahalıdır. Google Apps Script webhook'undaki 302 yönlendirme riskini bu polling modeliyle bertaraf ediyoruz.
 
-GitHub V0.3.1 kodu, RSS tarihleri biliniyorsa son **7 gün** içindeki içerikleri seçer ve haber başlığının Google Sheets formülü gibi çalışmasını engeller. Haber kaynakları henüz belirlenmedi, bu yüzden NEWS_FEEDS varsayılan boş ve haber üretimi kapalıdır. AI API ücretlidir; 1500 çağrı kotası dolar harcama limiti değildir.
+GitHub V0.4.0 kodu, RSS tarihleri biliniyorsa son **7 gün** içindeki içerikleri seçer ve haber başlığının Google Sheets formülü gibi çalışmasını engeller. Haber kaynakları henüz belirlenmedi, bu yüzden NEWS_FEEDS varsayılan boş ve haber üretimi kapalıdır. AI API ücretlidir; 1500 çağrı kotası dolar harcama limiti değildir.
 
 Gizli anahtarlar sadece Apps Script Script Properties'de tutulur. Google Sheet'e veya GitHub'a yazılmaz. Script editör erişimi olan kişiler anahtarlara erişebileceğinden tabloyu gereksiz kişilerle düzenleyici olarak paylaşma. Google Apps Script'in Google hesabında yayınlanması/kullanıcı izinlerinin verilmesi gerekir.
 
@@ -66,7 +66,7 @@ Gizli anahtarlar sadece Apps Script Script Properties'de tutulur. Google Sheet'e
 
 Apps Script fonksiyon listesinden stopBot çalıştır; otomatik kontroller durur. Bu, tabloyu veya Telegram botunu silmez.
 
-**Sürüm ayrımı:** GitHub'daki `Code.gs` V0.3.1; Google hesabında kurulu botun son ekran görüntüsü V0.3.0 gösterdi. GitHub commitleri Google Apps Script'e otomatik yansımaz. Yeni sürüme geçmek için çalışan Apps Script kodunun yedeğini alıp yeni dosyayı kontrollü olarak yapıştırmak gerekir. **Yeniden `setupBot` çalıştırmak yalnızca tetikleyici ayarları değiştiğinde gerekir.**
+**Sürüm ayrımı:** GitHub'daki `Code.gs` V0.4.0; Google hesabında kurulu botun son ekran görüntüsü V0.3.0 gösterdi. GitHub commitleri Google Apps Script'e otomatik yansımaz. Yeni sürüme geçmek için çalışan Apps Script kodunun yedeğini alıp yeni dosyayı kontrollü olarak yapıştırmak gerekir. **Yeniden `setupBot` çalıştırmak yalnızca tetikleyici ayarları değiştiğinde gerekir.**
 
 [İşletim, sürüm yükseltme, arıza ve geri alma rehberi](OPERATIONS.md).
 
