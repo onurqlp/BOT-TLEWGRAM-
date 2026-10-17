@@ -144,6 +144,7 @@ function botPrivate_(m) {
     botUser_(user);
     return botSend_(chat,'Merhaba! Ben sessiz topluluk asistaniyim.\n\n/ozet — Son haber ozeti\n/sor soru — AI asistan (aciksa)\n/bildirim — Ozel bildirim ac\n/sessiz — Bildirimi kapat\n/sil — Verilerini sil\n\nYalnizca sen istersen ozel mesaj alirsin.');
   }
+  if(command==='/kimim')return botSend_(chat,'Telegram kullanici kimligin: <code>'+id+'</code>');
   if(command==='/ozet') {
     var digest=botLatestDigest_('sent');
     return botSend_(chat,digest?digest.body:'Henuz onaylanmis haber ozeti yok.');
@@ -175,6 +176,9 @@ function botPrivate_(m) {
   return botSend_(chat,'Komutlari gormek icin /start yazabilirsin.');
 }
 function botGroup_(m) {
+  if(/^\/id(?:@\w+)?$/i.test(String(m.text||'').trim()) && botAdmin_(m.from && m.from.id)) {
+    return botSend_(m.from.id,'Telegram grup kimligi: <code>'+m.chat.id+'</code>');
+  }
   if(String(m.chat.id)!==String(botConfig_('TELEGRAM_GROUP_ID'))) return;
   if(m.new_chat_members){botMetric_('joins',m.new_chat_members.length);return;}
   if(m.left_chat_member){botMetric_('leaves');return;}
@@ -381,7 +385,7 @@ function botCleanup_(){
 }
 /** Run once from the Apps Script editor, after setting Script Properties. */
 function setupBot(){
-  if(!botConfig_('TELEGRAM_BOT_TOKEN')||!botConfig_('ADMIN_USER_IDS'))throw new Error('Ilk olarak Telegram token ve ADMIN_USER_IDS Script Properties alanina eklenmeli.');
+  if(!botConfig_('TELEGRAM_BOT_TOKEN'))throw new Error('Ilk olarak TELEGRAM_BOT_TOKEN degerini Script Properties alanina eklemelisin.');
   Object.keys(BOT_TABLES).forEach(function(k){botSheet_(k,BOT_TABLES[k]);});
   var p=botProps_();
   ['PUBLISH','MODERATION','AI'].forEach(function(k){
