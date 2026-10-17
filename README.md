@@ -2,7 +2,7 @@
 
 **Telegram için sessiz haber, moderasyon ve özel asistan botu.**
 
-> **Canlı durum · 17 Ekim 2026:** [@TLEWGRAM_bot](https://t.me/TLEWGRAM_bot) özel mesajlarda `/start`, `/kimim` ve yönetici `/panel` komutlarına yanıt verdi; ekran görüntüsüyle doğrulandı. Google Apps Script `setupBot` çalıştı, kontrol aralığı **5 dakika**. **Grup kimliği, RSS kaynakları ve AI anahtarı henüz eklenmedi; yayın, moderasyon ve AI kapalı.**
+> **Canlı durum · 17 Ekim 2026:** [@TLEWGRAM_bot](https://t.me/TLEWGRAM_bot) özel mesajlarda `/start`, `/kimim` ve yönetici `/panel` komutlarına yanıt verdi; ekran görüntüsüyle doğrulandı. Google Apps Script `setupBot` çalıştı, kontrol aralığı **5 dakika**. **Grup kimliği, RSS kaynakları ve AI anahtarı henüz eklenmedi.** Son panelde yayın AÇIK (manuel) göründü; ancak grup bağlantısı olmadığı için çalışacak hedefi yok, diğer iki mod kapalı.
 
 ## Kullanılan mimari
 
@@ -36,12 +36,18 @@ Google Sheets (users, news, digests, errors)
 - **Üye deneyimi:** Otomatik grup karşılama mesajı yok; DM yalnızca kullanıcı önce botu başlattığında veya kendi isteğiyle haber aboneliği açtığında.
 - **Anti-spam:** Varsayılan **kapalı**; açılırsa kurallara göre mesaj siler. **Anlık koruma değildir**, bir sonraki polling çalışmasına bağlıdır.
 - **AI:** Varsayılan **kapalı**; kullanıcı başına 5 soru/gün ve toplam 1500 istek/ay sınırı; harici AI API ücretlidir.
-- **Yönetim (V0.4.0 kaynak):** Telegram'da özel `/panel` üzerinden **mesaj tabanlı düğmeler** (eski zaman aşımına giren inline callback düğmeleri kaldırıldı). `/hepsiniac` yalnızca gerekli grup ve AI ayarları varsa ilgili modları açar. Haber gönderimi yine ayrı iki aşamalı yönetici onayı gerektirir.
+- **Yönetim (V0.5.0 kaynak):** Telegram'da özel `/panel` üzerinden **mesaj tabanlı düğmeler** (eski zaman aşımına giren inline callback düğmeleri kaldırıldı). `/hepsiniac` yalnızca gerekli grup ve AI ayarları varsa ilgili modları açar. Haber gönderimi yine ayrı iki aşamalı yönetici onayı gerektirir.
 - **Rapor:** Pazartesi yöneticiye özel ve sessiz mesaj; yalnızca botun gözlemleyebildiği olayları raporlar.
+
+## V0.5.0: Telegram üzerinden ilk kurulum
+
+GitHub sürümü bir kez Google Apps Script'e aktarıldıktan sonra yönetici özel sohbetinde `/kurulum` ile eksikleri görür. Bot Telegram grubuna eklendikten sonra grup içinde `/bagla` komutu, `TELEGRAM_GROUP_ID` değerini otomatik kaydeder. Özel sohbetten `/kaynak https://ornek.com/rss` ile RSS eklenir; `/kaynaklar`, `/kaynaksil 1` ve `/habercek` kullanılabilir. `/hepsiniac` yalnızca gereksinimleri karşılanan özellikleri açar. Ücretli AI için `OPENAI_API_KEY` yalnızca Google Script Properties içine girilir.
+
+**Grupta bir yöneticinin açıkça /bagla yazması gerekir; bot kendisini Telegram grubuna ekleyemez.** Haber konusu belli olmadığı için rastgele kaynak seçilmedi.
 
 ## GitHub ve çalışan Google kodu farklı sürümler olabilir
 
-**Repo kaynak sürümü: V0.4.0.** Otomatik testler bu kaynağı denetler. **Google Apps Script'te çalışan kurulumun V0.3.0 olduğu en son Telegram paneli ekran görüntüsünde doğrulandı.** GitHub'a kod göndermek Google'daki scripti otomatik güncellemez.
+**Repo kaynak sürümü: V0.5.0.** Otomatik testler bu kaynağı denetler. **Google Apps Script'te çalışan kurulumun V0.3.0 olduğu en son Telegram paneli ekran görüntüsünde doğrulandı.** GitHub'a kod göndermek Google'daki scripti otomatik güncellemez.
 
 İleride kod güncellenecekse, Apps Script editöründen mevcut kodun bir kopyasını sakla; GitHub'daki `apps-script/Code.gs` dosyasının tamamını yapıştır; kaydet. Bu işlemde `setupBot` tekrar çalıştırmak genellikle gerekmez; tetikleyici zaten varsa sonraki çalışmada yeni kod kullanılır. `setupBot` yalnızca tetikleyicileri yeniden yapılandırmak gerektiğinde kullanılmalıdır. Yeni kaynak kod canlıya aktarıldıktan sonra önce test grubunda doğrulanmalı.
 
