@@ -1,4 +1,4 @@
-# BOT TLEWGRAM V0.4.0 (GitHub kaynağı) — Cloudflare ve D1 olmadan
+# BOT TLEWGRAM V0.5.0 (GitHub kaynağı) — Cloudflare ve D1 olmadan
 
 **Oluşturulan Telegram botu:** [@TLEWGRAM_bot](https://t.me/TLEWGRAM_bot). **Durum:** Google Apps Script kuruldu; botun özel mesajları ve `/panel` komutu kullanıcı ekran görüntüsüyle doğrulandı. Grupla bağlantı, RSS ve AI henüz yapılandırılmadı.
 
@@ -39,9 +39,11 @@ testBotConnection sadece token geçerliliğini kontrol eder, Telegram'a mesaj at
 
 ## 4 — Telegram tarafı
 
-1. Botuna özelden /start ardından /kimim gönder. Sayı ADMIN_USER_IDS değeridir; Apps Script Script Properties alanına ekle.
-2. Botu Telegram test grubuna ekle. Grupta /id yaz. Grup kimliği **özelden** gelir; bunu TELEGRAM_GROUP_ID alanına gir.
-3. /panel komutunu botun özel sohbetinde aç. Mobil düğmelerle haber, yayın, AI, moderasyon ve raporu kontrol et.
+1. Botuna özelden /start ardından /kimim gönder. Sayı ADMIN_USER_IDS değeridir; Apps Script Script Properties alanına ekle (mevcut canlı botta bu adım tamamlandı).
+2. Botu Telegram grubuna ekle, grupta /bagla yaz. V0.5.0, TELEGRAM_GROUP_ID değerini otomatik kaydeder ve gruba mesaj atmadan yöneticiye özelden bildirir. İstersen /id sadece kimliği gösterir.
+3. Özelden /kurulum yaz; /kaynak https://site.example/rss komutuyla 1-5 RSS kaynağını ekle; /kaynaklar ile kontrol et, /habercek ile haber taslağı hazırla.
+4. AI için OPENAI_API_KEY Script Properties içine tanımlanır; gizli anahtarı Telegram mesajı olarak gönderme.
+5. /panel içinde /hepsiniac komutu **yalnızca ayarları tamamlanan** modları açar; grup yayını ayrıca /yayinhazir ID ve /yayinonay ID komutlarıyla iki aşamalı onay ister.
 4. Canlı moderasyon için botu grupta yönetici yap ve mesaj silme izni ver. Spam silme anlık değil, bir sonraki tarama sırasında yapılır.
 
 ## 5 — Üyeyi rahatsız etmeyen düzen
@@ -56,9 +58,9 @@ Pazartesi yaklaşık saat 11.00'de yöneticiye gözlemlenen mesajlar, katılıml
 
 Google Apps Script ve Google Sheets ücretsiz kotalarla kullanılabilir ama kullanım yoğunlaştığında kota ve çalışma süresi sınırlarına takılabilir. Hesap açmak için yeni bir sunucu şirketi gerekmiyor. Google'ın ücretsiz kişisel hesaplarda toplam trigger runtime limiti 90 dakika/gündür. Yüksek mesaj hacminde POLL_MINUTES=5 tercih edilmeli.
 
-**V0.4.0:** Panel artık `callback_data` kullanan inline düğmeler yerine `/komut` gönderen Telegram klavyesidir. Bu değişiklik `query is too old` hatasını ortadan kaldırır, ancak yanıtların gelmesi bir sonraki polling çalışmasına bağlıdır. `/hepsiniac` yalnızca bağlı grup ve AI API anahtarı varsa ilgili seçenekleri açabilir. Kod Google Apps Script'e aktarılmadan canlıda etkinleşmez. Telegram güncellemeleri kontrollü döngüde çalıştırma başına en fazla **120 adet** işlenir; 25 saniye zaman sınırı da vardır. Başarısız bir güncelleme sonraki çalışmada yeniden denenir; üç başarısızlık sonunda kuyruktan çıkarılır ve hata kaydına yazılır. Yoğun gruplarda kuyruk büyüyebilir. Anti-spam gerçek zamanlı değildir: 5 dakikada bir kontrol + Google tetikleyici gecikmesi yaşanabilir; POLL_MINUTES=1 daha hızlı ama kota açısından daha pahalıdır. Google Apps Script webhook'undaki 302 yönlendirme riskini bu polling modeliyle bertaraf ediyoruz.
+**V0.5.0:** Grubu /bagla ve RSS kaynaklarını /kaynak komutuyla Telegram üzerinden tanımlamak mümkün; AI için gizli anahtar Google ayarlarında kalır. Panel artık `callback_data` kullanan inline düğmeler yerine `/komut` gönderen Telegram klavyesidir. Bu değişiklik `query is too old` hatasını ortadan kaldırır, ancak yanıtların gelmesi bir sonraki polling çalışmasına bağlıdır. `/hepsiniac` yalnızca bağlı grup ve AI API anahtarı varsa ilgili seçenekleri açabilir. Kod Google Apps Script'e aktarılmadan canlıda etkinleşmez. Telegram güncellemeleri kontrollü döngüde çalıştırma başına en fazla **120 adet** işlenir; 25 saniye zaman sınırı da vardır. Başarısız bir güncelleme sonraki çalışmada yeniden denenir; üç başarısızlık sonunda kuyruktan çıkarılır ve hata kaydına yazılır. Yoğun gruplarda kuyruk büyüyebilir. Anti-spam gerçek zamanlı değildir: 5 dakikada bir kontrol + Google tetikleyici gecikmesi yaşanabilir; POLL_MINUTES=1 daha hızlı ama kota açısından daha pahalıdır. Google Apps Script webhook'undaki 302 yönlendirme riskini bu polling modeliyle bertaraf ediyoruz.
 
-GitHub V0.4.0 kodu, RSS tarihleri biliniyorsa son **7 gün** içindeki içerikleri seçer ve haber başlığının Google Sheets formülü gibi çalışmasını engeller. Haber kaynakları henüz belirlenmedi, bu yüzden NEWS_FEEDS varsayılan boş ve haber üretimi kapalıdır. AI API ücretlidir; 1500 çağrı kotası dolar harcama limiti değildir.
+GitHub V0.5.0 kodu, RSS tarihleri biliniyorsa son **7 gün** içindeki içerikleri seçer ve haber başlığının Google Sheets formülü gibi çalışmasını engeller. Haber kaynakları henüz belirlenmedi, bu yüzden NEWS_FEEDS varsayılan boş ve haber üretimi kapalıdır. AI API ücretlidir; 1500 çağrı kotası dolar harcama limiti değildir.
 
 Gizli anahtarlar sadece Apps Script Script Properties'de tutulur. Google Sheet'e veya GitHub'a yazılmaz. Script editör erişimi olan kişiler anahtarlara erişebileceğinden tabloyu gereksiz kişilerle düzenleyici olarak paylaşma. Google Apps Script'in Google hesabında yayınlanması/kullanıcı izinlerinin verilmesi gerekir.
 
@@ -66,7 +68,7 @@ Gizli anahtarlar sadece Apps Script Script Properties'de tutulur. Google Sheet'e
 
 Apps Script fonksiyon listesinden stopBot çalıştır; otomatik kontroller durur. Bu, tabloyu veya Telegram botunu silmez.
 
-**Sürüm ayrımı:** GitHub'daki `Code.gs` V0.4.0; Google hesabında kurulu botun son ekran görüntüsü V0.3.0 gösterdi. GitHub commitleri Google Apps Script'e otomatik yansımaz. Yeni sürüme geçmek için çalışan Apps Script kodunun yedeğini alıp yeni dosyayı kontrollü olarak yapıştırmak gerekir. **Yeniden `setupBot` çalıştırmak yalnızca tetikleyici ayarları değiştiğinde gerekir.**
+**Sürüm ayrımı:** GitHub'daki `Code.gs` V0.5.0; Google hesabındaki bot, son kullanıcı mesajında V0.4.0 olarak doğrulandı. GitHub commitleri Google Apps Script'e otomatik yansımaz. Yeni sürüme geçmek için çalışan Apps Script kodunun yedeğini alıp yeni dosyayı kontrollü olarak yapıştırmak gerekir. **Yeniden `setupBot` çalıştırmak yalnızca tetikleyici ayarları değiştiğinde gerekir.**
 
 [İşletim, sürüm yükseltme, arıza ve geri alma rehberi](OPERATIONS.md).
 
