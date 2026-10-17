@@ -1,70 +1,56 @@
-# BOT TLEWGRAM — Güncel Kurulum (V0.3.0)
+# BOT TLEWGRAM
 
-**Önerilen sürüm: Google Apps Script + Google Sheets. Cloudflare veya D1 hesabı gerekmiyor.**
+**Telegram için sessiz haber, moderasyon ve özel asistan botu.**
 
-➡️ [Bulutsuz/ek hesapsız kurulumu aç](apps-script/README.md)  
-➡️ [Google Apps Script tek dosya bot kodu](apps-script/Code.gs)  
-➡️ [Hazır Google Sheets yönetim tablosu](https://docs.google.com/spreadsheets/d/1h_YTc1DPpkDhZpZJTBNXMga04E6ut-fyAO6t4U3sqWM/edit)
+> **Canlı durum · 17 Ekim 2026:** [@TLEWGRAM_bot](https://t.me/TLEWGRAM_bot) özel mesajlarda `/start`, `/kimim` ve yönetici `/panel` komutlarına yanıt verdi; ekran görüntüsüyle doğrulandı. Google Apps Script `setupBot` çalıştı, kontrol aralığı **5 dakika**. **Grup kimliği, RSS kaynakları ve AI anahtarı henüz eklenmedi; yayın, moderasyon ve AI kapalı.**
 
-Bot, Telegram güncellemelerini Apps Script zaman tetikleyicisiyle alır; mobil yönetim Telegram içinde /panel komutuyla yürütülür. **Kurulum senin Google hesabında henüz çalıştırılmadı; bot canlı değil.** İlk kurulumda yayın, AI ve moderasyon kapalıdır. Apps Script küçük/orta düşük mesaj hacimli pilot içindir: anlık spam engelleme sağlamaz ve Google kotalarına tabidir.
+## Kullanılan mimari
 
-Aşağıdaki V0.2.0 Worker/D1 dokümanı **arşiv ve alternatif mimari** olarak korunmaktadır.
+```text
+Telegram @TLEWGRAM_bot
+       ↕  getUpdates (5 dakika / Google tetikleyicisi)
+Google Apps Script (Google Sheets'e bağlı Code.gs)
+       ↕
+Google Sheets (users, news, digests, errors)
+       ↳ Gerekirse OpenAI API (şimdilik kapalı)
+```
 
----
+**Cloudflare Worker, D1, webhook, ayrı sunucu ve Telegram Mini App gerekmiyor.** Yönetici butonları botun özel sohbetindeki `/panel` komutundadır. Çoğu yönetim işlemi mobil Telegram'dan yapılır.
 
-# BOT TLEWGRAM V0.2.0 — Sessiz Telegram Topluluk Botu
+## Proje dosyaları
 
-**Durum: Deploy edilmemiş teknik MVP.** Kaynak kodu `onurqlp/BOT-TLEWGRAM-` deposundadır; Telegram/Cloudflare deploy henüz yapılmamıştır. Canlı gruba erişim veya mesaj gönderimi henüz yapılmamıştır.
+| Amaç | Bağlantı |
+| --- | --- |
+| Aktif mimarinin kodu | [apps-script/Code.gs](apps-script/Code.gs) |
+| Google kurulum adımları | [apps-script/README.md](apps-script/README.md) |
+| Kullanım, hata çözümü, geri alma | [apps-script/OPERATIONS.md](apps-script/OPERATIONS.md) |
+| Otomatik testler | [apps-script/test.mjs](apps-script/test.mjs) |
+| Google yönetim ve takip tablosu | [Google Sheets](https://docs.google.com/spreadsheets/d/1h_YTc1DPpkDhZpZJTBNXMga04E6ut-fyAO6t4U3sqWM/edit) |
+| Telegram grup bağlantısı ve testler | [Görev #4](https://github.com/onurqlp/BOT-TLEWGRAM-/issues/4) |
+| Google kurulum durumu | [Görev #5](https://github.com/onurqlp/BOT-TLEWGRAM-/issues/5) |
+| Eski Cloudflare alternatifi | [Arşiv dokümanı](docs/LEGACY_CLOUDFLARE.md) |
 
-## Neler çalışır (bağlandıktan sonra)?
-- Cloudflare Worker üzerinden güvenli Telegram webhook (`X-Telegram-Bot-Api-Secret-Token`).
-- Cloudflare D1'e kaydedilen üyelik tercihleri, RSS haber kuyruğu, günlük taslak, haftalık bot olayı raporu.
-- RSS haberleri linkleriyle listelenir, yalnızca **yönetici mobil panelde onay verince** grup mesajı yayınlanır.
-- Üye karşılama gürültüsü yok. `/start`, `/ozet`, `/sor soru`, `/bildirim`, `/sessiz`, `/sil` özel mesajdan kullanılır.
-- İsteğe bağlı bot moderasyonu; kesin görülen link flood'u silinir, şüpheliler kayıt olur. Varsayılan KAPALI.
-- Yönetici Telegram Mini App paneli, Telegram Web App imza doğrulaması + yönetici allowlist.
-- Pazartesi botun gözlemleyebildiği haftalık olay özetini yöneticiye DM ile gönderir.
-- AI varsayılan KAPALI. Açılırsa kullanıcı başına 5 soru/gün, toplam 1500 çağrı/ay başlangıç sınırları.
+## Özellikler ve güvenli başlangıç
 
-## Üretimden önce / tek seferlik kurulum
+- **Haber:** İzinli RSS kaynaklarını topla; günlük tek taslak oluştur; **yönetici ayrıca onaylarsa** ana gruba sessiz mesaj gönder.
+- **Üye deneyimi:** Otomatik grup karşılama mesajı yok; DM yalnızca kullanıcı önce botu başlattığında veya kendi isteğiyle haber aboneliği açtığında.
+- **Anti-spam:** Varsayılan **kapalı**; açılırsa kurallara göre mesaj siler. **Anlık koruma değildir**, bir sonraki polling çalışmasına bağlıdır.
+- **AI:** Varsayılan **kapalı**; kullanıcı başına 5 soru/gün ve toplam 1500 istek/ay sınırı; harici AI API ücretlidir.
+- **Yönetim:** Telegram'da özel `/panel` komutuyla rapor, taslak, yayını aç/kapat, moderasyonu aç/kapat, AI aç/kapat.
+- **Rapor:** Pazartesi yöneticiye özel ve sessiz mesaj; yalnızca botun gözlemleyebildiği olayları raporlar.
 
-1. Mevcut [GitHub deposunda](https://github.com/onurqlp/BOT-TLEWGRAM-) kod hazırdır. Depoyu **private** yap. Token ve gizli anahtar commit etme.
-2. Cloudflare hesabında `bot-tlewgram-db` isimli D1 veritabanı oluştur. Gerçek `database_id` değerini `wrangler.jsonc` içine koy.
-3. Node 22+ ortamında `npm install`, `npm test`, `npx wrangler d1 migrations apply bot-tlewgram-db --remote` çalıştır.
-4. `wrangler.jsonc` içindeki `NEWS_FEEDS` dizisini gerçek konuyla ilgili kaynaklardan oluşacak biçimde gir: `Kaynak adı|https://site/rss.xml;İkinci kaynak|https://site/rss`. Başta **boş** bırakıldı.
-5. Cloudflare Secrets'e `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_GROUP_ID`, `ADMIN_USER_IDS`, `PUBLIC_BASE_URL`; AI kullanacaksan `OPENAI_API_KEY` ekle. `TELEGRAM_GROUP_ID` ve `ADMIN_USER_IDS` hassas değil ama servis yapılandırmasında tutulması gerekir.
-   ```bash
-   npx wrangler secret put TELEGRAM_BOT_TOKEN
-   npx wrangler secret put TELEGRAM_WEBHOOK_SECRET
-   npx wrangler secret put TELEGRAM_GROUP_ID
-   npx wrangler secret put ADMIN_USER_IDS
-   npx wrangler secret put PUBLIC_BASE_URL
-   npx wrangler secret put OPENAI_API_KEY
-   ```
-6. `npx wrangler deploy` ile Workeri yükle. Çıkan URL'yi `PUBLIC_BASE_URL` olarak tanımla. İlgili hesapta `BotFather` üzerinden bot tokeni al, gerçek grupta sınırlı yönetici izinleri ver. Önce ayrı test grubunda dene.
-7. Yerel terminalde (asla chat içine yazmadan) `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `PUBLIC_BASE_URL` ortam değişkenlerini tanımlayarak `bash scripts/set-webhook.sh` çalıştır.
-8. Telegram'da bota özelden `/start` sonra `/panel` yaz. Panelde **AI**, **moderasyon** ve **yayın** kontrolleri başlangıçta kapalı. Testler geçtikten sonra bunları ayrı ayrı aç.
-9. Her adımı `docs/TEST_PLAN.md` ile doğrula. Gerçek kullanıcı izni ve gizlilik duyurusu olmadan üretim trafiğine açma.
+## GitHub ve çalışan Google kodu farklı sürümler olabilir
 
-## Çalışma ayrıntıları
-- Günlük cron: `07:00 UTC` = Türkiye 10.00 (yıl boyunca UTC+3). RSS kaynakları okunur ve bir bekleyen günlük taslak oluşturulur. **Otomatik grup gönderimi yapılmaz.**
-- Haftalık cron: Pazartesi `08:00 UTC` = Türkiye 11.00. Haftalık bot olay raporu yöneticiye sessiz özel mesaj olarak gider (yönetici botu daha önce başlatmış olmalı).
-- DM aboneleri: kullanıcı `/bildirim` derse, **yönetici onaylı yayının özel kopyası** maksimum 30 opt-in aboneye sessiz gönderilir. 30'dan büyük kitlede Queue ile fan-out geliştirilmelidir. Bu bir MVP güvenlik sınırıdır.
-- AI haberleri çevrimiçi aramaz; son onaylı haber özeti ve kullanıcı sorusuna dayanır. Güncel sorulara kaynak yoksa kesinlik iddiasında bulunmamalıdır.
-- Ham sohbet mesajları saklanmaz. Olaylar 30 gün, AI günlük sayaçları 45 gün tutulur. Telegram kullanıcı kimliği DM tercihi için saklanır; `/sil` ile kaldırılır.
+**Repo kaynak sürümü: V0.3.1.** Otomatik testler bu kaynağı denetler. **Google Apps Script'te çalışan kurulumun V0.3.0 olduğu en son Telegram paneli ekran görüntüsünde doğrulandı.** GitHub'a kod göndermek Google'daki scripti otomatik güncellemez.
 
-## Bilinen sınırlar
-- RSS XML ayrıştırıcısı basittir, bazı Atom/CDATА biçimlerinde öğeler atlanabilir; ilk testlerde kontrol edilmelidir.
-- Bot'un göremediği Telegram mesajları ve grup analitiği rapora yansımaz. Grup mesaj görünürlüğü bot yöneticisi ve privacy ayarlarına bağlıdır.
-- Aylık AI sınırı D1 UPSERT üzerinden atomik sınırlıdır; yine de **çağrı sınırıdır, dolar bazında gerçek harcama kilidi değildir**. Token tüketimi panelde görünür. Sağlayıcı düzeyinde bütçe ve alarm ayrıca uygulanmalıdır.
-- AI aylık toplam ve kişi başı günlük limitleri veritabanının atomik kayıtlarıyla kontrol edilir. Sağlayıcı hatalarında çağrı hakkı tüketilebilir.
-- RSS URL tekrar denetimi URL bazlıdır; farklı URL'lerde aynı haber için anlamsal benzerlik tespiti henüz yoktur.
-- Bot grup moderator kuralları hakaret tespiti yapmaz; hatalı silme riskini azaltmak için varsayılan kapalıdır.
-- Ücretli deployment, canlı Telegram bağlantısı veya diğer repolarda değişiklik yapılmamıştır.
+İleride kod güncellenecekse, Apps Script editöründen mevcut kodun bir kopyasını sakla; GitHub'daki `apps-script/Code.gs` dosyasının tamamını yapıştır; kaydet. Bu işlemde `setupBot` tekrar çalıştırmak genellikle gerekmez; tetikleyici zaten varsa sonraki çalışmada yeni kod kullanılır. `setupBot` yalnızca tetikleyicileri yeniden yapılandırmak gerektiğinde kullanılmalıdır. Yeni kaynak kod canlıya aktarıldıktan sonra önce test grubunda doğrulanmalı.
 
-## 0.2.0 güncellemesi — 17.10.2026
-- Aylık AI kotası atomik ve token tüketimi ölçümlü hale getirildi.
-- AI kayıtlarında kişisel kimlikler azaltıldı; /sil kapsamı genişletildi.
-- RSS haber tarih filtresi, HTTPS adres güvenlik kontrolleri ve webhook boyut sınırı.
-- Mini App kimlik doğrulama testleri, CI izin daraltması, Dependabot ve kontrol belgeleri.
-- Yeniden kurulum: 0001 + 0002 migration sırasıyla uygulanır. Henüz deploy yapılmadı.
+## Güvenlik, kota ve repo görünürlüğü
+
+Token ve OpenAI anahtarları yalnızca Apps Script **Script Properties** alanındadır. Bunları commit, Issue veya README içine ekleme. Repo şu anda **Public** olduğu için kaynak ve belgeler herkes tarafından okunabilir; hassas kullanım için [repo ayarlarında](https://github.com/onurqlp/BOT-TLEWGRAM-/settings) Private önerilir.
+
+Apps Script zaman tetikleyicileri dakika hassasiyetinde garanti vermez; düşük/orta trafikli pilotlar için uygundur. GitHub testlerinin yeşil olması Telegram, haber kaynakları, AI veya Google'ın günlük kota sınırlarının uçtan uca test edildiği anlamına **gelmez**.
+
+**Eski Cloudflare Workers/D1 dosyaları** (ör. `src/`, `migrations/`, `wrangler.jsonc`) alternatif olarak saklanır, aktif Google Apps Script botuyla bağlantıları yoktur.
+
+Son repo düzenlemesi: 17 Ekim 2026.
