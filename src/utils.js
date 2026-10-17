@@ -2,7 +2,17 @@ export function escapeHTML(s='') {return String(s).replace(/&/g,'&amp;').replace
 export function stripHTML(s='') {return String(s).replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,'$1').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();}
 export function decodeXML(s='') {return s.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'");}
 export function takeTag(xml,tag) { const m = xml.match(new RegExp('<(?:[\\w-]+:)?'+tag+'(?:\\s[^>]*)?>([\\s\\S]*?)<\\/(?:[\\w-]+:)?'+tag+'>','i')); return m?decodeXML(stripHTML(m[1])):''; }
-export function isSafeHttps(url) {try {let u=new URL(url);return u.protocol==='https:'&&!['localhost','127.0.0.1'].includes(u.hostname)&&!u.hostname.endsWith('.local')}catch{return false}}
+export function isSafeHttps(url) {
+ try {
+  const u=new URL(url);
+  const host=u.hostname.toLowerCase().replace(/^\[|\]$/g,'');
+  // RSS hosts are configured by us; block direct IP/private host references.
+  if(u.protocol!=='https:'||u.username||u.password||u.port&&u.port!=='443')return false;
+  if(!host||host==='localhost'||host.endsWith('.localhost')||host.endsWith('.local')||host.endsWith('.internal'))return false;
+  if(host.includes(':')||/^\d+\.\d+\.\d+\.\d+$/.test(host))return false;
+  return true;
+ } catch {return false}
+}
 export function parseFeed(xml,source) {
  const parts = [...xml.matchAll(/<(item|entry)(?:\s[^>]*)?>([\s\S]*?)<\/\1>/gi)].slice(0,20);
  return parts.map(m=>{
@@ -10,7 +20,8 @@ export function parseFeed(xml,source) {
   const rssLink=takeTag(x,'link');const atomLink=x.match(/<link[^>]*href=["']([^"']+)["']/i)?.[1]||'';
   const url=decodeXML(rssLink||atomLink).trim();
   const summary=(takeTag(x,'description')||takeTag(x,'summary')).slice(0,500);
-  return {title,url,summary,source};
+  const publishedAt=takeTag(x,'pubDate')||takeTag(x,'published')||takeTag(x,'updated')||null;
+  return {title,url,summary,source,publishedAt};
  }).filter(x=>x.title&&isSafeHttps(x.url));
 }
 export function spamScore(text=''){

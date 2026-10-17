@@ -14,3 +14,9 @@
 | `AI_MONTHLY_TOTAL_LIMIT` | wrangler vars | 1500 (çağrı adedi) |
 
 Bir kullanıcı grubu ve konusu belirtilmeden NEWS_FEEDS boş tutulur. Gerçek yayın konuları, güvenilir ve telif uygunluğu incelenmiş RSS kaynaklarından seçilir.
+
+## V0.2.0 — Kota ve gizlilik
+- `migrations/0002_ai_limits_and_privacy.sql` geçmiş AI kullanımını taşır ve aylık atomik çağrı limiti tablosu ekler.
+- AI token tüketimi aylık toplulaştırılmış sayılır; soru metinleri saklanmaz.
+- Kaynaklar yalnızca HTTPS DNS host adından kabul edilir; özel IP ve kimlik bilgili URL'ler engellenir.
+- GitHub Actions deploy etmez, yalnızca kontrol eder; CI token gerektirmez.

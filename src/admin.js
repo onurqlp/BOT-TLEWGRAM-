@@ -8,10 +8,12 @@ function same(a,b){if(a.length!==b.length)return false;let v=0;for(let i=0;i<a.l
 export async function requireAdmin(request,env){
  const init=request.headers.get('X-Telegram-Init-Data')||'';
  if(!init||!env.TELEGRAM_BOT_TOKEN) return false;
- const p=new URLSearchParams(init);const theirHash=p.get('hash')||'';p.delete('hash');
+ const p=new URLSearchParams(init);
+ if(p.getAll('hash').length!==1||p.getAll('auth_date').length!==1||p.getAll('user').length!==1)return false;
+ const theirHash=p.get('hash')||'';p.delete('hash');
  const date=Number(p.get('auth_date')||0);const now=Math.floor(Date.now()/1000);
  if(!date||now-date>3600||date>now+120)return false;
- const data=[...p].sort((a,b)=>a[0].localeCompare(b[0])).map(([k,v])=>`${k}=${v}`).join('\n');
+ const data=[...p].sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0).map(([k,v])=>`${k}=${v}`).join('\n');
  const key=await hmac(enc.encode('WebAppData'),env.TELEGRAM_BOT_TOKEN);
  const ours=toHex(await hmac(key,data));
  if(!same(ours,theirHash.toLowerCase()))return false;

@@ -1,6 +1,6 @@
 {
   "name": "bot-tlewgram",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,5 +10,7 @@
     "db:remote": "wrangler d1 migrations apply bot-tlewgram-db --remote",
     "test": "node --test"
   },
-  "devDependencies": {"wrangler": "^4.0.0"}
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
 }

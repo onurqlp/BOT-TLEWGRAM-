@@ -1,6 +1,6 @@
-# BOT TLEWGRAM V1 — Sessiz Telegram Topluluk Botu
+# BOT TLEWGRAM V0.2.0 — Sessiz Telegram Topluluk Botu
 
-**Durum: Deploy edilmemiş teknik MVP.** Mevcut GitHub repolarında hiçbir değişiklik yapılmamıştır. Canlı gruba erişim veya mesaj gönderimi henüz yapılmamıştır.
+**Durum: Deploy edilmemiş teknik MVP.** Kaynak kodu `onurqlp/BOT-TLEWGRAM-` deposundadır; Telegram/Cloudflare deploy henüz yapılmamıştır. Canlı gruba erişim veya mesaj gönderimi henüz yapılmamıştır.
 
 ## Neler çalışır (bağlandıktan sonra)?
 - Cloudflare Worker üzerinden güvenli Telegram webhook (`X-Telegram-Bot-Api-Secret-Token`).
@@ -14,7 +14,7 @@
 
 ## Üretimden önce / tek seferlik kurulum
 
-1. GitHub üzerinde yeni bir **private** `bot-tlewgram` deposu aç. Bu ZIP içindekileri repo kök dizinine yükle. Token ve gizli anahtar commit etme.
+1. Mevcut [GitHub deposunda](https://github.com/onurqlp/BOT-TLEWGRAM-) kod hazırdır. Depoyu **private** yap. Token ve gizli anahtar commit etme.
 2. Cloudflare hesabında `bot-tlewgram-db` isimli D1 veritabanı oluştur. Gerçek `database_id` değerini `wrangler.jsonc` içine koy.
 3. Node 22+ ortamında `npm install`, `npm test`, `npx wrangler d1 migrations apply bot-tlewgram-db --remote` çalıştır.
 4. `wrangler.jsonc` içindeki `NEWS_FEEDS` dizisini gerçek konuyla ilgili kaynaklardan oluşacak biçimde gir: `Kaynak adı|https://site/rss.xml;İkinci kaynak|https://site/rss`. Başta **boş** bırakıldı.
@@ -42,8 +42,15 @@
 ## Bilinen sınırlar
 - RSS XML ayrıştırıcısı basittir, bazı Atom/CDATА biçimlerinde öğeler atlanabilir; ilk testlerde kontrol edilmelidir.
 - Bot'un göremediği Telegram mesajları ve grup analitiği rapora yansımaz. Grup mesaj görünürlüğü bot yöneticisi ve privacy ayarlarına bağlıdır.
-- Aylık AI sınırı **çağrı sınırıdır; dolar bazında gerçek harcama kilidi değildir**. Üretimde model kullanımını fiyatlandırmayla karşılaştıran ayrı bütçe anahtarı ve alarm uygulanmalıdır.
-- Aynı anda çok sayıda AI çağrısı yapılırsa toplam aylık sınır çok az aşılabilir; kesin sınır için atomik bütçe rezervasyonu önerilir.
+- Aylık AI sınırı D1 UPSERT üzerinden atomik sınırlıdır; yine de **çağrı sınırıdır, dolar bazında gerçek harcama kilidi değildir**. Token tüketimi panelde görünür. Sağlayıcı düzeyinde bütçe ve alarm ayrıca uygulanmalıdır.
+- AI aylık toplam ve kişi başı günlük limitleri veritabanının atomik kayıtlarıyla kontrol edilir. Sağlayıcı hatalarında çağrı hakkı tüketilebilir.
 - RSS URL tekrar denetimi URL bazlıdır; farklı URL'lerde aynı haber için anlamsal benzerlik tespiti henüz yoktur.
 - Bot grup moderator kuralları hakaret tespiti yapmaz; hatalı silme riskini azaltmak için varsayılan kapalıdır.
 - Ücretli deployment, canlı Telegram bağlantısı veya diğer repolarda değişiklik yapılmamıştır.
+
+## 0.2.0 güncellemesi — 17.10.2026
+- Aylık AI kotası atomik ve token tüketimi ölçümlü hale getirildi.
+- AI kayıtlarında kişisel kimlikler azaltıldı; /sil kapsamı genişletildi.
+- RSS haber tarih filtresi, HTTPS adres güvenlik kontrolleri ve webhook boyut sınırı.
+- Mini App kimlik doğrulama testleri, CI izin daraltması, Dependabot ve kontrol belgeleri.
+- Yeniden kurulum: 0001 + 0002 migration sırasıyla uygulanır. Henüz deploy yapılmadı.

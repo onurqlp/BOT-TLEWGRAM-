@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "bot-tlewgram-v1",
+  "name": "bot-tlewgram-v2",
   "main": "src/index.js",
   "compatibility_date": "2026-10-01",
   "workers_dev": true,
