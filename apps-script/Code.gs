@@ -1,10 +1,10 @@
 /**
- * BOT TLEWGRAM — Google Apps Script / Sheets edition v0.3.0 (2026-10-17)
+ * BOT TLEWGRAM — Google Apps Script / Sheets edition v0.5.0 (2026-10-17)
  * NO Cloudflare, NO D1, NO webhook, NO public web app.
  * Paste into Extensions > Apps Script in BOT TLEWGRAM's Google Sheet.
  * Set Script Properties, run setupBot() once.
  */
-var BOT_VERSION = '0.4.0';
+var BOT_VERSION = '0.5.0';
 var BOT_TZ = 'Europe/Istanbul';
 var BOT_TABLES = {
   users: ['user_id','username','dm_news','created_at'],
@@ -128,6 +128,60 @@ function botDigestById_(id) {
   for(var i=0;i<rows.length;i++) if(String(rows[i][0])===String(id))return {row:i+2,id:String(rows[i][0]),body:rows[i][2],status:rows[i][3]};
   return null;
 }
+
+function botFeeds_(){
+ return String(botConfig_('NEWS_FEEDS')).split(';').filter(Boolean).map(function(line){
+  var at=line.indexOf('|');
+  return at>0?{name:line.slice(0,at).trim(),url:line.slice(at+1).trim()}:null;
+ }).filter(function(f){return f&&f.name&&botHttps_(f.url);}).slice(0,5);
+}
+function botAdminSetup_(id,chat,text,command){
+ if(!botAdmin_(id))return botSend_(chat,'Bu komut yoneticilere ozeldir.');
+ var feeds=botFeeds_();
+ if(command==='/kurulum'){
+  return botSend_(chat,'<b>BOT TLEWGRAM KURULUM</b>\n'+
+   'Grup: '+(botConfig_('TELEGRAM_GROUP_ID')?botEsc_(botConfig_('TELEGRAM_GROUP_ID')):'EKSIK')+
+   '\nRSS: '+feeds.length+'/5'+
+   '\nAI anahtari: '+(botConfig_('OPENAI_API_KEY')?'TANIMLI':'EKSIK')+
+   '\n\n1. Botu gruba ekle ve grupta /bagla gonder.'+
+   '\n2. Bana ozelden /kaynak https://site.example/rss gonder.'+
+   '\n3. AI icin Google Apps Script Script Properties bolumune OPENAI_API_KEY ekle.'+
+   '\n4. Hazir modlari /hepsiniac ile ac.'+
+   '\n5. /habercek ile taslak hazirla. Grup yayini ayrica onay ister.',{disable_notification:true});
+ }
+ if(command==='/kaynaklar'){
+  var lines=feeds.map(function(f,i){return (i+1)+'. '+botEsc_(f.name)+'\n'+botEsc_(f.url);}).join('\n');
+  return botSend_(chat,'<b>RSS kaynaklari ('+feeds.length+'/5)</b>\n'+(lines||'Henuz kaynak yok.')+
+   '\n\nKaynak ekle: /kaynak https://site.example/rss'+
+   '\nKaynak sil: /kaynaksil 1',{disable_notification:true});
+ }
+ if(command==='/kaynak'){
+  var arg=text.replace(/^\/kaynak(?:@\w+)?\s*/i,'').trim();
+  var found=arg.match(/^(?:([^|;]{2,50})\s*\|\s*)?(https:\/\/\S+)$/i);
+  if(!found)return botSend_(chat,'Kullanim: /kaynak https://site.example/rss\nveya /kaynak Kaynak adi | https://site.example/rss');
+  var url=found[2].trim(),name=found[1]?found[1].trim():url.match(/^https:\/\/([^\/]+)/i)[1];
+  if(!botHttps_(url)||/[|;\s]/.test(url)||url.length>500)return botSend_(chat,'Gecerli HTTPS RSS URL kullan.');
+  if(feeds.some(function(f){return f.url===url;}))return botSend_(chat,'Bu kaynak zaten eklendi.');
+  if(feeds.length>=5)return botSend_(chat,'En fazla 5 kaynak. /kaynaksil 1 kullan.');
+  feeds.push({name:name,url:url});
+  botProps_().setProperty('NEWS_FEEDS',feeds.map(function(f){return f.name+'|'+f.url;}).join(';'));
+  return botSend_(chat,'RSS kaynak eklendi: '+botEsc_(name)+'.\n/habercek ile haber tara.',{disable_notification:true});
+ }
+ if(command==='/kaynaksil'){
+  var n=Number(text.replace(/^\/kaynaksil(?:@\w+)?\s*/i,'').trim())-1;
+  if(!Number.isInteger(n)||n<0||n>=feeds.length)return botSend_(chat,'Kullanim: /kaynaksil 1');
+  var removed=feeds.splice(n,1)[0];
+  botProps_().setProperty('NEWS_FEEDS',feeds.map(function(f){return f.name+'|'+f.url;}).join(';'));
+  return botSend_(chat,'RSS kaynak silindi: '+botEsc_(removed.name),{disable_notification:true});
+ }
+ if(command==='/habercek'){
+  if(!feeds.length)return botSend_(chat,'RSS kaynagi yok. Once /kaynak https://site.example/rss gonder.');
+  botCollectFeeds_();botPrepareDigest_();
+  var latest=botLatestDigest_('pending');
+  return botSend_(chat,latest?'Haber taslagi #'+latest.id+' hazir. /taslak ile incele.':'Yeni taslak yok. Kaynaklarin guncel haberlerini kontrol et.',{disable_notification:true});
+ }
+}
+
 function botPanel_(chatId) {
   var digest=botLatestDigest_('pending');
   var missing=[];
@@ -147,7 +201,8 @@ function botPanel_(chatId) {
     [{text:botEnabled_('PUBLISH')?'/yayinkapat':'/yayinac'}],
     [{text:botEnabled_('MODERATION')?'/modkapat':'/modac'}],
     [{text:botEnabled_('AI')?'/aikapat':'/aiac'}],
-    [{text:'/hepsiniac'}]
+    [{text:'/hepsiniac'}],
+    [{text:'/kurulum'},{text:'/kaynaklar'},{text:'/habercek'}]
   ];
   if(digest)keyboard.push([{text:'/yayinhazir '+digest.id}]);
   return botSend_(chatId,body,{reply_markup:{keyboard:keyboard,resize_keyboard:true,is_persistent:true},disable_notification:true});
@@ -231,6 +286,7 @@ function botPrivate_(m) {
     p.getKeys().filter(function(k){return k.indexOf('AI_U_')===0 && k.endsWith('_'+id);}).forEach(function(k){p.deleteProperty(k);});
     return botSend_(chat,'Bildirim tercihleriniz ve size ait AI soru sayaçlari silindi.');
   }
+  if(['/kurulum','/kaynak','/kaynaklar','/kaynaksil','/habercek'].indexOf(command)>=0)return botAdminSetup_(id,chat,text,command);
   if(['/yayinac','/yayinkapat','/modac','/modkapat','/aiac','/aikapat','/hepsiniac','/yayinhazir','/yayinonay'].indexOf(command)>=0)return botAdminCommand_(id,chat,text,command);
   if(command==='/panel'||command==='/durum'||command==='/rapor'||command==='/taslak'){
     if(!botAdmin_(id))return botSend_(chat,'Bu komut yoneticilere ozeldir.');
@@ -244,6 +300,15 @@ function botPrivate_(m) {
   return botSend_(chat,'Komutlari gormek icin /start yazabilirsin.');
 }
 function botGroup_(m) {
+  var who=m.from&&m.from.id,command=String(m.text||'').trim();
+  if(/^\/bagla(?:@\w+)?$/i.test(command)&&botAdmin_(who)){
+    var previous=String(botConfig_('TELEGRAM_GROUP_ID'));
+    if(previous&&previous!==String(m.chat.id))return botSend_(who,'Baska bir grup zaten bagli: <code>'+botEsc_(previous)+'</code>. Otomatik degistirmedim.');
+    botProps_().setProperty('TELEGRAM_GROUP_ID',String(m.chat.id));
+    return botSend_(who,'Grup baglandi: '+botEsc_(m.chat.title||'Grup')+
+      '\nKimlik: <code>'+m.chat.id+'</code>'+
+      '\nModerasyon icin Telegram grubunda bota mesaj silme yetkisi vermelisin. /panel ile modlari ac.',{disable_notification:true});
+  }
   if(/^\/id(?:@\w+)?$/i.test(String(m.text||'').trim()) && botAdmin_(m.from && m.from.id)) {
     return botSend_(m.from.id,'Telegram grup kimligi: <code>'+m.chat.id+'</code>');
   }
@@ -350,7 +415,7 @@ function botAsk_(userId,chatId,question){
   }
 }
 function botCollectFeeds_(){
-  var feeds=String(botConfig_('NEWS_FEEDS')).split(';').filter(Boolean).slice(0,5);
+  var feeds=botFeeds_().map(function(f){return f.name+'|'+f.url;});
   var sh=botSheet_('news',BOT_TABLES.news);
   var urls={};
   botRows_('news').forEach(function(r){urls[String(r[2])]=true;});
