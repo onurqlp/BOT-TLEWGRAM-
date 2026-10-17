@@ -135,3 +135,48 @@ test('outdated or future RSS articles are filtered before creating digests',()=>
  assert.equal(ctx.botFresh_(''),true);
  assert.match(source,/botFresh_\(published\)/);
 });
+
+test('five-minute polling panel uses message buttons, not callback data',()=>{
+ const messages=[];
+ ctx.botLatestDigest_=()=>({id:'123',status:'pending'});
+ ctx.botConfig_=key=>key==='TELEGRAM_GROUP_ID'?'-100TEST':'';
+ ctx.botEnabled_=()=>false;
+ ctx.botSend_=(id,msg,extra)=>messages.push({id,msg,extra});
+ ctx.botPanel_('42');
+ assert.equal(messages.length,1);
+ const keyboard=messages[0].extra.reply_markup.keyboard;
+ assert.ok(keyboard.flat().some(x=>x.text==='/hepsiniac'));
+ assert.ok(keyboard.flat().some(x=>x.text==='/yayinhazir 123'));
+ assert.equal(messages[0].extra.reply_markup.inline_keyboard,undefined);
+});
+test('expired inline callbacks cause no state mutation or messages',()=>{
+ const sent=[];
+ ctx.botApi_=()=>{throw Error('query is too old');};
+ ctx.botSend_=()=>sent.push(true);
+ ctx.botCallback_({id:'expired',from:{id:42},message:{chat:{type:'private',id:42}},data:'admin:toggle:AI'});
+ assert.equal(sent.length,0);
+});
+test('admin can activate only modes with configured prerequisites',()=>{
+ values.set('ADMIN_USER_IDS','42');
+ values.delete('FLAG_AI');values.delete('FLAG_PUBLISH');values.delete('FLAG_MODERATION');
+ ctx.botConfig_=key=>values.get(key)||'';
+ ctx.botEnabled_=key=>values.get('FLAG_'+key)==='true';
+ ctx.botSend_=()=>{};
+ ctx.botPanel_=()=>{};
+ ctx.botAdminCommand_(42,42,'/hepsiniac','/hepsiniac');
+ assert.equal(values.get('FLAG_AI'),undefined);
+ assert.equal(values.get('FLAG_PUBLISH'),undefined);
+ values.set('TELEGRAM_GROUP_ID','-10012345');
+ values.set('OPENAI_API_KEY','unit-test-dummy-key');
+ ctx.botAdminCommand_(42,42,'/hepsiniac','/hepsiniac');
+ assert.equal(values.get('FLAG_AI'),'true');
+ assert.equal(values.get('FLAG_MODERATION'),'true');
+ assert.equal(values.get('FLAG_PUBLISH'),'true');
+ ctx.botAdminCommand_(42,42,'/aikapat','/aikapat');
+ assert.equal(values.get('FLAG_AI'),'false');
+});
+test('unauthorized user cannot change admin control flags',()=>{
+ values.set('FLAG_AI','false');
+ ctx.botAdminCommand_(123,123,'/aiac','/aiac');
+ assert.equal(values.get('FLAG_AI'),'false');
+});
