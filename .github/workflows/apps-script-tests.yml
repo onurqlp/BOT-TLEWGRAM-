@@ -1,0 +1,21 @@
+name: Apps Script tests
+on:
+  push:
+    paths:
+      - 'apps-script/**'
+      - '.github/workflows/apps-script-tests.yml'
+  pull_request:
+    paths:
+      - 'apps-script/**'
+      - '.github/workflows/apps-script-tests.yml'
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test apps-script/test.mjs
