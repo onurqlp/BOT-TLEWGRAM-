@@ -22,6 +22,12 @@
 - Moderasyonu gerçek grupta değil, önce test grubunda sınayıp bot yönetici izinlerini en az yetkiyle ayarla.
 - Haber aboneliği kullanıcı `/bildirim` komutuyla açılınca çalışır. `/sessiz` kapatır; `/sil` tercih ve kişisel sayaçları kaldırır.
 
+## Telegram panelindeki zaman aşımı düzeltmesi (V0.4.0)
+
+Google Sheets `errors` sekmesinde 17.10.2026 tarihli `answerCallbackQuery: query is too old` hataları doğrulandı. 5 dakikalık polling, Telegram inline düğmelerinin cevap süresini kaçırıyor. Yeni **reply keyboard** düğmeleri gerçek Telegram mesajı gönderir; aynı zaman aşımı hatasına yol açmaz. Yeni panel için önce GitHub'daki `apps-script/Code.gs` dosyasını Google editörüne taşı; uygulamanın Telegram'dan doğrudan güncellenmesi mümkün değildir.
+
+`/panel` menüsündeki `/hepsiniac` düğmesi, `TELEGRAM_GROUP_ID` varsa manuel yayın ve moderasyonu, `OPENAI_API_KEY` varsa AI'ı açar. `NEWS_FEEDS` boşken haber oluşturulmaz. `/yayinhazir ID` ve `/yayinonay ID` arasında iki adımlı yayın onayı vardır. `POLL_MINUTES=5` olduğundan iki yanıt arasında birkaç dakika geçebilir.
+
 ## Arıza giderme
 
 1. **Bot beş dakika cevap vermiyor:** Google Apps Script > Yürütmeler. `pollTelegram` tetikleyicisi açık mı, hata var mı? `pollTelegram` fonksiyonunu bir kez elle çalıştır. Hata tekrar ederse Script Properties değerlerini kontrol et. **Tokeni günlüklere veya GitHub'a kopyalama.**
@@ -29,7 +35,7 @@
 3. **Grup olayları görünmüyor:** `TELEGRAM_GROUP_ID` doğru mu? Grup `/id` ile alınır; botun gerekli yetkileri var mı? Telegram bot gizlilik modunda bazı mesajlar ulaşmayabilir.
 4. **Haber yok:** `NEWS_FEEDS` boşsa beklenen davranıştır. Kaynak `https://` olmalı ve cevap HTTP 200 olmalı. RSS/Atom formatı ve son 7 günlük haber olup olmadığı kontrol edilmeli.
 5. **AI cevap vermiyor:** Varsayılan kapalıdır. Script Properties `OPENAI_API_KEY`, model erişimi, API bütçesi ve 5/gün, 1500/ay çağrı limitleri kontrol edilmeli. **Başarısız görünen bazı API çağrıları da kota tüketebilir**, sağlayıcı tarafından ücretlendirilmiş olabilir.
-6. **Çok fazla mesaj / kaçırılan güncellemeler:** V0.3.1 GitHub sürümü çalıştırma başına 120 güncellemeye veya 25 saniyeye kadar kontrollü kuyruk taraması yapar; yine de Apps Script kotaları ve tetikleyici gecikmesi geçerlidir. Gerçek zamanlı moderasyon için polling doğru mimari olmayabilir.
+6. **Çok fazla mesaj / kaçırılan güncellemeler:** V0.4.0 GitHub sürümü çalıştırma başına 120 güncellemeye veya 25 saniyeye kadar kontrollü kuyruk taraması yapar; yine de Apps Script kotaları ve tetikleyici gecikmesi geçerlidir. Gerçek zamanlı moderasyon için polling doğru mimari olmayabilir.
 7. **Bekleyen yayın `needs_review`:** Telegram grubunda mesajın gerçekten gönderilip gönderilmediğini kontrol et. Onay tuşunu tekrar tekrar kullanma.
 
 ## Acil durdurma
@@ -40,7 +46,7 @@ Telegram botuna birden fazla sunucu veya webhook bağlama. Kullanıcıların gö
 
 ## GitHub'dan Google'a kod yükseltme
 
-**GitHub V0.3.1, canlı Google Apps Script V0.3.0 kurulumunu otomatik güncellemez.**
+**GitHub V0.4.0, canlı Google Apps Script V0.3.0 kurulumunu otomatik güncellemez.**
 
 1. Google Sheets → Uzantılar → Apps Script'e gir.
 2. Önce mevcut `Code.gs` içeriğini yedekle (ör. güvenli özel belge/kopya).
@@ -54,11 +60,13 @@ Telegram botuna birden fazla sunucu veya webhook bağlama. Kullanıcıların gö
 - Bot tokeni ve API anahtarları yalnızca Google Apps Script **Script Properties** alanında tutulur. Bu alana script editörleri erişebilir; erişimleri sınırlı tut.
 - Repo şu anda Public olabilir. Public GitHub Issue, commit, Actions loglarına sır paylaşma.
 - Kişisel kullanıcı hesapları `users` sayfasında; bireysel AI kotası Script Properties içinde. Raporlar sayısal etkinlik sayaçlarıdır.
-- RSS başlıkları V0.3.1'de Google Sheets'e formül olarak işlenmeyecek şekilde korunur.
+- RSS başlıkları V0.4.0'de Google Sheets'e formül olarak işlenmeyecek şekilde korunur.
 - GitHub'ın yeşil testleri Apps Script üretim kotalarını veya Telegram uçtan uca işleyişini doğrulamaz.
 
-## GitHub V0.3.1 değişiklik özeti
+## GitHub V0.4.0 değişiklik özeti
 
+- Telegram yönetim düğmeleri mesaj tabanlı; eskimiş inline callback'lerin ayar değiştirmesi engellendi.
+- `/hepsiniac` gerekli ayarlar varsa ilgili modları açar; yayın hâlâ ayrıca onaylanır.
 - 5 dakikalık polling için bounded batch (maksimum 120 / çalıştırma ve 25 saniyelik döngü limiti).
 - Başarısız Telegram update işlemi iki kez daha denenir; üçüncü başarısızlıktan sonra hata kaydına işlenip atlanır.
 - RSS/Atom haberlerinin tarihi biliniyorsa 7 gün dışındakiler ayıklanır, Google Sheets formül enjeksiyonu engellenir.
