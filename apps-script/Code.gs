@@ -4,7 +4,7 @@
  * Paste into Extensions > Apps Script in BOT TLEWGRAM's Google Sheet.
  * Set Script Properties, run setupBot() once.
  */
-var BOT_VERSION = '0.3.1';
+var BOT_VERSION = '0.4.0';
 var BOT_TZ = 'Europe/Istanbul';
 var BOT_TABLES = {
   users: ['user_id','username','dm_news','created_at'],
@@ -130,21 +130,76 @@ function botDigestById_(id) {
 }
 function botPanel_(chatId) {
   var digest=botLatestDigest_('pending');
-  var text='<b>BOT TLEWGRAM • Mobil Kontrol</b>\nV'+BOT_VERSION+
-    '\nYayin: '+(botEnabled_('PUBLISH')?'ACIK':'KAPALI')+
+  var missing=[];
+  if(!botConfig_('TELEGRAM_GROUP_ID'))missing.push('TELEGRAM_GROUP_ID');
+  if(!botConfig_('NEWS_FEEDS'))missing.push('NEWS_FEEDS');
+  if(!botConfig_('OPENAI_API_KEY'))missing.push('OPENAI_API_KEY');
+  var body='<b>BOT TLEWGRAM - Yonetim V'+BOT_VERSION+'</b>'+
+    '\nYayin: '+(botEnabled_('PUBLISH')?'ACIK (manuel)':'KAPALI')+
     '\nModerasyon: '+(botEnabled_('MODERATION')?'ACIK':'KAPALI')+
     '\nYapay zeka: '+(botEnabled_('AI')?'ACIK':'KAPALI')+
-    '\nBekleyen ozet: '+(digest?'#'+digest.id:'Yok')+
-    '\n\nAna gruba otomatik mesaj atilmaz.';
-  var keys=[
-    [{text:'📊 Rapor',callback_data:'admin:report'},{text:'📰 Taslak',callback_data:'admin:draft'}],
-    [{text:'🔔 Yayini '+(botEnabled_('PUBLISH')?'kapat':'ac'),callback_data:'admin:toggle:PUBLISH'}],
-    [{text:'🛡 Moderasyonu '+(botEnabled_('MODERATION')?'kapat':'ac'),callback_data:'admin:toggle:MODERATION'}],
-    [{text:'🧠 AI '+(botEnabled_('AI')?'kapat':'ac'),callback_data:'admin:toggle:AI'}]
+    '\nTaslak: '+(digest?'#'+digest.id:'Yok')+
+    '\nEksik ayarlar: '+(missing.join(', ')||'Yok')+
+    '\n\nDugmeler mesaj komutu gonderir; Telegram callback suresi asimi olmaz.'+
+    '\nYanitlar bir sonraki Google kontrolunde gelir.';
+  var keyboard=[
+    [{text:'/rapor'},{text:'/taslak'},{text:'/panel'}],
+    [{text:botEnabled_('PUBLISH')?'/yayinkapat':'/yayinac'}],
+    [{text:botEnabled_('MODERATION')?'/modkapat':'/modac'}],
+    [{text:botEnabled_('AI')?'/aikapat':'/aiac'}],
+    [{text:'/hepsiniac'}]
   ];
-  if(digest)keys.push([{text:'✅ Ozeti gruba gonder #'+digest.id,callback_data:'admin:publish:'+digest.id}]);
-  botSend_(chatId,text,{reply_markup:{inline_keyboard:keys},disable_notification:true});
+  if(digest)keyboard.push([{text:'/yayinhazir '+digest.id}]);
+  return botSend_(chatId,body,{reply_markup:{keyboard:keyboard,resize_keyboard:true,is_persistent:true},disable_notification:true});
 }
+function botAdminCommand_(id,chat,text,command) {
+  if(!botAdmin_(id))return botSend_(chat,'Bu komut yoneticilere ozeldir.');
+  var actions={
+    '/yayinac':['PUBLISH',true],'/yayinkapat':['PUBLISH',false],
+    '/modac':['MODERATION',true],'/modkapat':['MODERATION',false],
+    '/aiac':['AI',true],'/aikapat':['AI',false]
+  };
+  var action=actions[command];
+  if(action){
+    if(action[1]&&action[0]!=='AI'&&!botConfig_('TELEGRAM_GROUP_ID'))return botSend_(chat,'Once TELEGRAM_GROUP_ID Google Apps Script ayarlarina girilmeli.');
+    if(action[1]&&action[0]==='AI'&&!botConfig_('OPENAI_API_KEY'))return botSend_(chat,'AI icin OPENAI_API_KEY Script Properties alanina girilmeli.');
+    botProps_().setProperty('FLAG_'+action[0],action[1]?'true':'false');
+    return botPanel_(chat);
+  }
+  if(command==='/hepsiniac'){
+    var enabled=[],missing=[];
+    if(botConfig_('TELEGRAM_GROUP_ID')){
+      botProps_().setProperty('FLAG_PUBLISH','true');
+      botProps_().setProperty('FLAG_MODERATION','true');
+      enabled.push('Yayin (manuel onayli)','Moderasyon');
+    }else missing.push('TELEGRAM_GROUP_ID');
+    if(botConfig_('OPENAI_API_KEY')){
+      botProps_().setProperty('FLAG_AI','true');
+      enabled.push('Yapay zeka');
+    }else missing.push('OPENAI_API_KEY');
+    botSend_(chat,'Acildi: '+(enabled.join(', ')||'Hicbiri')+'.\nEksikler: '+(missing.join(', ')||'Yok')+'.\nHaber icin NEWS_FEEDS gereklidir. Otomatik grup yayini yok.',{disable_notification:true});
+    return botPanel_(chat);
+  }
+  if(command==='/yayinhazir'){
+    var a=text.match(/^\/yayinhazir\s+(\d+)$/);
+    if(!a)return botSend_(chat,'Ornek: /yayinhazir 123');
+    var draft=botDigestById_(a[1]);
+    if(!draft||draft.status!=='pending')return botSend_(chat,'Bekleyen taslak yok.');
+    if(!botConfig_('TELEGRAM_GROUP_ID')||!botEnabled_('PUBLISH'))return botSend_(chat,'Grup kimligi ve yayin izni gerekli.');
+    botProps_().setProperty('APPROVAL_'+id,a[1]+'|'+Date.now());
+    return botSend_(chat,'<b>Yayin onayi:</b>\n'+draft.body+'\n\n20 dakika icinde alttaki dugmeye bas.',{reply_markup:{keyboard:[[{text:'/yayinonay '+a[1]}],[{text:'/panel'}]],resize_keyboard:true},disable_notification:true});
+  }
+  if(command==='/yayinonay'){
+    var a=text.match(/^\/yayinonay\s+(\d+)$/);
+    if(!a)return botSend_(chat,'Once /yayinhazir komutunu kullan.');
+    var data=String(botConfig_('APPROVAL_'+id)).split('|');
+    if(data.length!==2||data[0]!==a[1]||Date.now()-Number(data[1])>20*60000)return botSend_(chat,'Onay suresi doldu. /yayinhazir '+a[1]+' ile yeniden basla.');
+    botProps_().deleteProperty('APPROVAL_'+id);
+    return botPublish_(chat,a[1]);
+  }
+  return botSend_(chat,'Bilinmeyen yonetici komutu.');
+}
+
 function botPrivate_(m) {
   var id=m.from && m.from.id,chat=m.chat && m.chat.id;
   if(!id||!chat)return;
@@ -176,6 +231,7 @@ function botPrivate_(m) {
     p.getKeys().filter(function(k){return k.indexOf('AI_U_')===0 && k.endsWith('_'+id);}).forEach(function(k){p.deleteProperty(k);});
     return botSend_(chat,'Bildirim tercihleriniz ve size ait AI soru sayaçlari silindi.');
   }
+  if(['/yayinac','/yayinkapat','/modac','/modkapat','/aiac','/aikapat','/hepsiniac','/yayinhazir','/yayinonay'].indexOf(command)>=0)return botAdminCommand_(id,chat,text,command);
   if(command==='/panel'||command==='/durum'||command==='/rapor'||command==='/taslak'){
     if(!botAdmin_(id))return botSend_(chat,'Bu komut yoneticilere ozeldir.');
     if(command==='/panel'||command==='/durum')return botPanel_(chat);
@@ -204,25 +260,12 @@ function botGroup_(m) {
   }
 }
 function botCallback_(q) {
-  var data=String(q.data||'');
-  var userId=q.from && q.from.id;
-  botApi_('answerCallbackQuery',{callback_query_id:q.id});
-  if(!botAdmin_(userId)||!q.message||q.message.chat.type!=='private')return;
-  var chat=q.message.chat.id;
-  if(data==='admin:report')return botWeekly_(chat);
-  if(data==='admin:draft'){
-    var draft=botLatestDigest_('pending');
-    return botSend_(chat,draft?draft.body:'Bekleyen taslak yok.');
-  }
-  var toggle=data.match(/^admin:toggle:(PUBLISH|MODERATION|AI)$/);
-  if(toggle){
-    var key='FLAG_'+toggle[1],val=botEnabled_(toggle[1])?'false':'true';
-    botProps_().setProperty(key,val);
-    return botPanel_(chat);
-  }
-  var publish=data.match(/^admin:publish:(\d+)$/);
-  if(publish)return botPublish_(chat,publish[1]);
+  // Stale inline keyboard callbacks must never toggle a setting or publish a digest.
+  try{botApi_('answerCallbackQuery',{callback_query_id:q.id,text:'Eski panel. Yenisi icin /panel yaz.'});}
+  catch(e){return;} // Expected when getUpdates checks every 5 minutes.
+  if(botAdmin_(q.from&&q.from.id)&&q.message&&q.message.chat&&q.message.chat.type==='private')return botPanel_(q.message.chat.id);
 }
+
 function botUpdate_(update){
   if(update.callback_query) return botCallback_(update.callback_query);
   if(update.message){
