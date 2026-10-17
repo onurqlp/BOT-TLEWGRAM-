@@ -4,7 +4,7 @@
  * Paste into Extensions > Apps Script in BOT TLEWGRAM's Google Sheet.
  * Set Script Properties, run setupBot() once.
  */
-var BOT_VERSION = '0.3.0';
+var BOT_VERSION = '0.3.1';
 var BOT_TZ = 'Europe/Istanbul';
 var BOT_TABLES = {
   users: ['user_id','username','dm_news','created_at'],
@@ -57,6 +57,13 @@ function botHttps_(url) {
 function botSafeCell_(value) {
   var text=String(value == null?'':value);
   return /^[=+\-@\t\r\n]/.test(text)?'\u200b'+text:text;
+}
+// Reject articles with clearly stale or future publication dates. Missing dates remain eligible.
+function botFresh_(published) {
+  if(!published)return true;
+  var millis=Date.parse(String(published));
+  if(!isFinite(millis))return true;
+  return millis>=Date.now()-7*86400000 && millis<=Date.now()+86400000;
 }
 function botSpamScore_(text) {
   var s=String(text||'');
@@ -328,8 +335,9 @@ function botCollectFeeds_(){
           var chosen=links.filter(function(el){return el.getAttribute('rel')===null||el.getAttribute('rel').getValue()==='alternate';})[0]||links[0];
           link=chosen&&chosen.getAttribute('href')?chosen.getAttribute('href').getValue():'';
         }
+        var published=root.getName()==='rss'?(item.getChildText('pubDate')||''):(item.getChildText('published',root.getNamespace())||item.getChildText('updated',root.getNamespace())||'');
         title=title.replace(/\s+/g,' ').trim().slice(0,220);
-        if(title&&!urls[link]&&botHttps_(link)){
+        if(title&&botFresh_(published)&&!urls[link]&&botHttps_(link)){
           sh.appendRow([Utilities.getUuid(),botSafeCell_(title),link,botSafeCell_(source),'queued']);urls[link]=true;
         }
       });
@@ -367,7 +375,6 @@ function botPublish_(adminChat,id){
     botSend_(group,entry.body,{disable_notification:true});
     sheet.getRange(entry.row,4).setValue('sent');
     sheet.getRange(entry.row,6).setValue(new Date());
-    botMetric_('digests');
   }catch(e){
     // Telegram may have accepted the post even if the DB state update failed.
     sheet.getRange(entry.row,4).setValue('needs_review');
@@ -375,7 +382,8 @@ function botPublish_(adminChat,id){
     try{botSend_(adminChat,'Yayin sonucu belirsiz. Tekrar gondermeden grubu kontrol et.');}catch(noticeErr){botLogError_('publish-alert',noticeErr);}
     return;
   }
-  // Follow-up notifications must never change a successfully sent digest into a retry.
+  // Follow-up notifications and metrics must never change a sent digest into a retry.
+  try{botMetric_('digests');}catch(e){botLogError_('publish-metric',e);}
   try{botSend_(adminChat,'✅ Ozet sessizce gruba gonderildi.');}
   catch(e){botLogError_('admin-publish-confirm',e);}
   var recipients=botRows_('users').filter(function(row){return Number(row[2])===1;}).slice(0,30);
