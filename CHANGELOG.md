@@ -1,5 +1,15 @@
 # BOT TLEWGRAM — Sürüm geçmişi
 
+## V0.4.0 — GitHub kaynak kodu (17.10.2026)
+
+**Canlı Google koduna henüz aktarılmadı.** Google Sheets 'errors' sekmesinde `query is too old` callback zaman aşımı kaydı doğrulandı.
+
+- Telegram mobil panel düğmeleri callback yerine normal komut mesajı gönderiyor; 5 dakikalık polling ile uyumlu.
+- Eski inline callback düğmeleri artık hiçbir yayını veya ayarı değiştirmiyor.
+- Adminler `/hepsiniac` ile ancak ayarları tamamlanan modları açabiliyor; `TELEGRAM_GROUP_ID` ve `OPENAI_API_KEY` eksikse ilgili modlar açılmıyor.
+- Grup yayını için `/yayinhazir ID` ve `/yayinonay ID` şeklinde iki aşamalı açık onay gerekiyor.
+- 19 otomatik test; Google Apps Script'te canlıya alım ve Telegram uçtan uca testleri henüz yapılmadı.
+
 ## V0.3.1 — GitHub kaynak kodu (17.10.2026)
 
 **GitHub'da hazırlandı, henüz Google Apps Script canlı editörüne aktarılmadı.**
