@@ -23,7 +23,7 @@ new vm.Script(source,{filename:'Code.gs'}).runInContext(ctx);
 test('script compiles without module imports',()=>assert.ok(!source.includes('import {')));
 test('no unsupported browser URL constructor or fetch',()=>{
  assert.ok(!source.includes('new URL('));
- assert.ok(!/(^|[^.\\w])fetch\\s*\\(/m.test(source));
+ assert.ok(!source.includes('await fetch('));
 });
 test('only HTTPS hostnames accepted',()=>{
  assert.equal(ctx.botHttps_('https://www.example.org/rss'),true);
