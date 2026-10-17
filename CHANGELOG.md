@@ -1,5 +1,15 @@
 # BOT TLEWGRAM — Sürüm geçmişi
 
+## V0.5.0 — Telegram üzerinden kurulum (17.10.2026)
+
+**GitHub'da hazır; canlı Google botunun V0.4.0 üzerinde olduğu kullanıcı tarafından bildirildi.**
+
+- Yönetici özel mesajında `/kurulum`, `/kaynak`, `/kaynaklar`, `/kaynaksil`, `/habercek` komutları eklendi.
+- Grup içinde yalnızca yetkili adminin `/bagla` komutuyla `TELEGRAM_GROUP_ID` otomatik kaydedilir. Grup sohbetine otomatik karşılama mesajı gönderilmez.
+- RSS kaynakları Telegram'dan Script Properties'e güvenli HTTPS URL doğrulamasıyla eklenir; 5 kaynak limiti ve tekrar kontrolü sürer.
+- Grubun konusu bilinmediği için rastgele RSS kaynağı eklenmedi; yapay zekâ anahtarı Google Script Properties içinde kalır.
+- 22 otomatik testin tamamı başarılı; Telegram/Google canlı kodu kendiliğinden güncellenmez.
+
 ## V0.4.0 — GitHub kaynak kodu (17.10.2026)
 
 **Canlı Google koduna henüz aktarılmadı.** Google Sheets 'errors' sekmesinde `query is too old` callback zaman aşımı kaydı doğrulandı.
