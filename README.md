@@ -36,12 +36,12 @@ Google Sheets (users, news, digests, errors)
 - **Üye deneyimi:** Otomatik grup karşılama mesajı yok; DM yalnızca kullanıcı önce botu başlattığında veya kendi isteğiyle haber aboneliği açtığında.
 - **Anti-spam:** Varsayılan **kapalı**; açılırsa kurallara göre mesaj siler. **Anlık koruma değildir**, bir sonraki polling çalışmasına bağlıdır.
 - **AI:** Varsayılan **kapalı**; kullanıcı başına 5 soru/gün ve toplam 1500 istek/ay sınırı; harici AI API ücretlidir.
-- **Yönetim:** Telegram'da özel `/panel` komutuyla rapor, taslak, yayını aç/kapat, moderasyonu aç/kapat, AI aç/kapat.
+- **Yönetim (V0.4.0 kaynak):** Telegram'da özel `/panel` üzerinden **mesaj tabanlı düğmeler** (eski zaman aşımına giren inline callback düğmeleri kaldırıldı). `/hepsiniac` yalnızca gerekli grup ve AI ayarları varsa ilgili modları açar. Haber gönderimi yine ayrı iki aşamalı yönetici onayı gerektirir.
 - **Rapor:** Pazartesi yöneticiye özel ve sessiz mesaj; yalnızca botun gözlemleyebildiği olayları raporlar.
 
 ## GitHub ve çalışan Google kodu farklı sürümler olabilir
 
-**Repo kaynak sürümü: V0.3.1.** Otomatik testler bu kaynağı denetler. **Google Apps Script'te çalışan kurulumun V0.3.0 olduğu en son Telegram paneli ekran görüntüsünde doğrulandı.** GitHub'a kod göndermek Google'daki scripti otomatik güncellemez.
+**Repo kaynak sürümü: V0.4.0.** Otomatik testler bu kaynağı denetler. **Google Apps Script'te çalışan kurulumun V0.3.0 olduğu en son Telegram paneli ekran görüntüsünde doğrulandı.** GitHub'a kod göndermek Google'daki scripti otomatik güncellemez.
 
 İleride kod güncellenecekse, Apps Script editöründen mevcut kodun bir kopyasını sakla; GitHub'daki `apps-script/Code.gs` dosyasının tamamını yapıştır; kaydet. Bu işlemde `setupBot` tekrar çalıştırmak genellikle gerekmez; tetikleyici zaten varsa sonraki çalışmada yeni kod kullanılır. `setupBot` yalnızca tetikleyicileri yeniden yapılandırmak gerektiğinde kullanılmalıdır. Yeni kaynak kod canlıya aktarıldıktan sonra önce test grubunda doğrulanmalı.
 
