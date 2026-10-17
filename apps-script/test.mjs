@@ -180,3 +180,41 @@ test('unauthorized user cannot change admin control flags',()=>{
  ctx.botAdminCommand_(123,123,'/aiac','/aiac');
  assert.equal(values.get('FLAG_AI'),'false');
 });
+
+test('authorized group /bagla configures group ID, notifies admin and does not spam group',()=>{
+ values.set('ADMIN_USER_IDS','42');
+ values.delete('TELEGRAM_GROUP_ID');
+ const calls=[];
+ ctx.botConfig_=(key,otherwise)=>values.has(key)?values.get(key):(otherwise||'');
+ ctx.botSend_=(id,body,options)=>calls.push({id,body,options});
+ ctx.botGroup_({from:{id:42},chat:{id:-100888,title:'Ornek test grubu',type:'supergroup'},text:'/bagla'});
+ assert.equal(values.get('TELEGRAM_GROUP_ID'),'-100888');
+ assert.equal(calls.length,1);
+ assert.equal(calls[0].id,42);
+ assert.match(calls[0].body,/Grup baglandi/);
+ ctx.botGroup_({from:{id:42},chat:{id:-100777,title:'Yanlis',type:'supergroup'},text:'/bagla'});
+ assert.equal(values.get('TELEGRAM_GROUP_ID'),'-100888');
+});
+test('only authorized admin can add or remove an RSS source from Telegram',()=>{
+ values.set('ADMIN_USER_IDS','42');
+ values.delete('NEWS_FEEDS');
+ ctx.botConfig_=(key,otherwise)=>values.has(key)?values.get(key):(otherwise||'');
+ ctx.botSend_=()=>{};
+ ctx.botAdminSetup_(123,123,'/kaynak https://example.org/rss','/kaynak');
+ assert.equal(values.has('NEWS_FEEDS'),false);
+ ctx.botAdminSetup_(42,42,'/kaynak https://example.org/rss','/kaynak');
+ assert.ok(values.get('NEWS_FEEDS').includes('example.org|https://example.org/rss'));
+ ctx.botAdminSetup_(42,42,'/kaynak https://example.org/rss','/kaynak');
+ assert.equal(ctx.botFeeds_().length,1);
+ ctx.botAdminSetup_(42,42,'/kaynaksil 1','/kaynaksil');
+ assert.equal(ctx.botFeeds_().length,0);
+});
+test('RSS configuration rejects HTTP, embedded separators and private addresses',()=>{
+ values.set('ADMIN_USER_IDS','42');values.delete('NEWS_FEEDS');
+ ctx.botConfig_=(key,otherwise)=>values.has(key)?values.get(key):(otherwise||'');
+ ctx.botSend_=()=>{};
+ for(const entry of ['/kaynak http://example.org/rss','/kaynak https://127.0.0.1/a','/kaynak https://example.org/rss;bad','/kaynak https://example.org/rss|injection']){
+  ctx.botAdminSetup_(42,42,entry,'/kaynak');
+ }
+ assert.equal(ctx.botFeeds_().length,0);
+});
