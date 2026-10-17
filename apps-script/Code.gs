@@ -53,6 +53,11 @@ function botHttps_(url) {
   if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.startsWith('.') || host.endsWith('.')) return false;
   return true;
 }
+// Google Sheets treats strings beginning with '=' as formulas. RSS content is untrusted.
+function botSafeCell_(value) {
+  var text=String(value == null?'':value);
+  return /^[=+\-@\t\r\n]/.test(text)?'\u200b'+text:text;
+}
 function botSpamScore_(text) {
   var s=String(text||'');
   var links=(s.match(/https?:\/\/|t\.me\/|telegram\.me\//gi)||[]).length;
@@ -226,12 +231,35 @@ function pollTelegram() {
     var p=botProps_();
     if(!p.getProperty('TELEGRAM_BOT_TOKEN'))return;
     var offset=Number(p.getProperty('NEXT_UPDATE_ID')||0);
-    var results=botApi_('getUpdates',{offset:offset,timeout:0,limit:20,allowed_updates:['message','callback_query']});
-    for(var i=0;i<results.length;i++){
-      try {botUpdate_(results[i]);}catch(e){botLogError_('update',e);}
-      // At most one processing attempt: poison updates do not block the entire queue.
-      p.setProperty('NEXT_UPDATE_ID',String(results[i].update_id+1));
+    // Bound every run so a busy group cannot exhaust Apps Script execution quotas.
+    var started=Date.now(), processed=0, maxPerRun=120, batchSize=40;
+    while(processed<maxPerRun && Date.now()-started<25000) {
+      var results=botApi_('getUpdates',{offset:offset,timeout:0,limit:Math.min(batchSize,maxPerRun-processed),allowed_updates:['message','callback_query']});
+      if(!results || !results.length)break;
+      var needsRetry=false;
+      for(var i=0;i<results.length;i++) {
+        var entry=results[i], retryKey='RETRY_'+entry.update_id;
+        try {
+          botUpdate_(entry);
+          p.deleteProperty(retryKey);
+        }catch(e) {
+          botLogError_('update',e);
+          var tries=Number(p.getProperty(retryKey)||0)+1;
+          if(tries<3) {
+            p.setProperty(retryKey,String(tries));
+            needsRetry=true;
+            break; // Do not acknowledge a failed update; retry next scheduled run.
+          }
+          p.deleteProperty(retryKey);
+          botLogError_('update-dropped','Update '+entry.update_id+' failed three times');
+        }
+        offset=entry.update_id+1;
+        p.setProperty('NEXT_UPDATE_ID',String(offset));
+        processed++;
+      }
+      if(needsRetry || results.length<batchSize)break;
     }
+    if(processed>=maxPerRun)botMetric_('poll_capacity_hits');
   }catch(e){botLogError_('poll',e);}
   finally {lock.releaseLock();}
 }
@@ -266,7 +294,7 @@ function botAsk_(userId,chatId,question){
     botSend_(chatId,botEsc_(answer));
     botMetric_('ai');
   }catch(e){
-    p.setProperty(userKey,String(used));p.setProperty(monthKey,String(globalUsed));
+    // Keep the reservation: a provider call may have been billed before a downstream error.
     botLogError_('ai',e);
     botSend_(chatId,'Su anda AI yaniti olusturulamadi.');
   }
@@ -302,7 +330,7 @@ function botCollectFeeds_(){
         }
         title=title.replace(/\s+/g,' ').trim().slice(0,220);
         if(title&&!urls[link]&&botHttps_(link)){
-          sh.appendRow([Utilities.getUuid(),title,link,source,'queued']);urls[link]=true;
+          sh.appendRow([Utilities.getUuid(),botSafeCell_(title),link,botSafeCell_(source),'queued']);urls[link]=true;
         }
       });
     }catch(e){botLogError_('rss',e);}
@@ -311,7 +339,7 @@ function botCollectFeeds_(){
 function botPrepareDigest_(){
   var day=botDate_();
   if(botRows_('digests').some(function(r){return String(r[1])===day;}))return;
-  var news=botRows_('news').filter(function(r){return r[4]==='queued';}).slice(0,4);
+  var news=botRows_('news').filter(function(r){return r[4]==='queued';}).slice(-4).reverse();
   if(!news.length)return;
   var lines=news.map(function(row,i){
     return (i+1)+'. <a href="'+botEsc_(row[2])+'">'+botEsc_(row[1])+'</a> ('+botEsc_(row[3])+')';
@@ -340,17 +368,21 @@ function botPublish_(adminChat,id){
     sheet.getRange(entry.row,4).setValue('sent');
     sheet.getRange(entry.row,6).setValue(new Date());
     botMetric_('digests');
-    botSend_(adminChat,'✅ Ozet sessizce gruba gonderildi.');
-    var recipients=botRows_('users').filter(function(row){return Number(row[2])===1;}).slice(0,30);
-    recipients.forEach(function(row){
-      try{botSend_(String(row[0]),entry.body,{disable_notification:true});}
-      catch(e){botLogError_('subscriber-dm',e);}
-    });
   }catch(e){
+    // Telegram may have accepted the post even if the DB state update failed.
     sheet.getRange(entry.row,4).setValue('needs_review');
     botLogError_('publish',e);
-    botSend_(adminChat,'Yayin sonucu belirsiz; ayni haberi tekrar gondermeden Telegram grubunu kontrol et.');
+    try{botSend_(adminChat,'Yayin sonucu belirsiz. Tekrar gondermeden grubu kontrol et.');}catch(noticeErr){botLogError_('publish-alert',noticeErr);}
+    return;
   }
+  // Follow-up notifications must never change a successfully sent digest into a retry.
+  try{botSend_(adminChat,'✅ Ozet sessizce gruba gonderildi.');}
+  catch(e){botLogError_('admin-publish-confirm',e);}
+  var recipients=botRows_('users').filter(function(row){return Number(row[2])===1;}).slice(0,30);
+  recipients.forEach(function(row){
+    try{botSend_(String(row[0]),entry.body,{disable_notification:true});}
+    catch(e){botLogError_('subscriber-dm',e);}
+  });
 }
 function dailyNewsJob(){
   var lock=LockService.getScriptLock();if(!lock.tryLock(1000))return;
