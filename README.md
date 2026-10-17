@@ -1,3 +1,17 @@
+# BOT TLEWGRAM — Güncel Kurulum (V0.3.0)
+
+**Önerilen sürüm: Google Apps Script + Google Sheets. Cloudflare veya D1 hesabı gerekmiyor.**
+
+➡️ [Bulutsuz/ek hesapsız kurulumu aç](apps-script/README.md)  
+➡️ [Google Apps Script tek dosya bot kodu](apps-script/Code.gs)  
+➡️ [Hazır Google Sheets yönetim tablosu](https://docs.google.com/spreadsheets/d/1h_YTc1DPpkDhZpZJTBNXMga04E6ut-fyAO6t4U3sqWM/edit)
+
+Bot, Telegram güncellemelerini Apps Script zaman tetikleyicisiyle alır; mobil yönetim Telegram içinde /panel komutuyla yürütülür. **Kurulum senin Google hesabında henüz çalıştırılmadı; bot canlı değil.** İlk kurulumda yayın, AI ve moderasyon kapalıdır. Apps Script küçük/orta düşük mesaj hacimli pilot içindir: anlık spam engelleme sağlamaz ve Google kotalarına tabidir.
+
+Aşağıdaki V0.2.0 Worker/D1 dokümanı **arşiv ve alternatif mimari** olarak korunmaktadır.
+
+---
+
 # BOT TLEWGRAM V0.2.0 — Sessiz Telegram Topluluk Botu
 
 **Durum: Deploy edilmemiş teknik MVP.** Kaynak kodu `onurqlp/BOT-TLEWGRAM-` deposundadır; Telegram/Cloudflare deploy henüz yapılmamıştır. Canlı gruba erişim veya mesaj gönderimi henüz yapılmamıştır.
