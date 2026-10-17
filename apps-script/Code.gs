@@ -45,14 +45,13 @@ function botEsc_(text) {
   return String(text == null ? '' : text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 function botHttps_(url) {
-  try {
-    var v = new URL(String(url));
-    if (v.protocol !== 'https:' || !v.hostname) return false;
-    var host = v.hostname.toLowerCase();
-    if (host === 'localhost' || host.endsWith('.local') || host.endsWith('.internal')) return false;
-    if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.indexOf(':') >= 0) return false;
-    return true;
-  } catch (e) { return false; }
+  // Apps Script V8 does not expose the browser URL constructor.
+  var match = String(url||'').match(/^https:\/\/([a-z0-9.-]+)(?::443)?(?:[\/?#]|$)/i);
+  if (!match) return false;
+  var host=match[1].toLowerCase();
+  if (!host.includes('.') || host==='localhost' || host.endsWith('.local') || host.endsWith('.internal')) return false;
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.startsWith('.') || host.endsWith('.')) return false;
+  return true;
 }
 function botSpamScore_(text) {
   var s=String(text||'');
@@ -398,7 +397,7 @@ function setupBot(){
   if([1,5,10,15,30].indexOf(mins)===-1)mins=5;
   ScriptApp.newTrigger('pollTelegram').timeBased().everyMinutes(mins).create();
   ScriptApp.newTrigger('dailyNewsJob').timeBased().atHour(10).everyDays(1).inTimezone(BOT_TZ).create();
-  ScriptApp.newTrigger('weeklyReportJob').timeBased().onWeekDay(ScriptApp.WeekDay.MONDAY).atHour(11).inTimezone(BOT_TZ).create();
+  ScriptApp.newTrigger('weeklyReportJob').timeBased().everyWeeks(1).onWeekDay(ScriptApp.WeekDay.MONDAY).atHour(11).inTimezone(BOT_TZ).create();
   Logger.log('Bot is configured. POLL_MINUTES='+mins+'. All live flags default to OFF.');
 }
 /** Stop triggers without deleting data or Telegram account. */
