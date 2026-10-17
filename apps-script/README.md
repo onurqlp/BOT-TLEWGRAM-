@@ -1,5 +1,8 @@
 # BOT TLEWGRAM V0.3.0 — Cloudflare ve D1 olmadan
 
+**Oluşturulan Telegram botu:** [@TLEWGRAM_bot](https://t.me/TLEWGRAM_bot). **Not:** BotFather'da bot oluşturuldu; token ve Google Apps Script bağlantısı henüz doğrulanmadı.
+
+
 Bu alternatif Google Apps Script + Google Sheets ile çalışır. Ayrı sunucu, Cloudflare, D1, webhook veya Google Web App dağıtımı gerektirmez. Önceki Worker kaynakları yalnızca geri dönüş amacıyla depoda korunur.
 
 ## 1 — Google Sheets'ten Apps Script'i aç
