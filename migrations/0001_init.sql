@@ -1,0 +1,30 @@
+CREATE TABLE IF NOT EXISTS users (
+ user_id INTEGER PRIMARY KEY, username TEXT, started_at TEXT DEFAULT CURRENT_TIMESTAMP,
+ dm_news INTEGER NOT NULL DEFAULT 0, ai_questions INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS news (
+ id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, url TEXT UNIQUE NOT NULL,
+ source TEXT NOT NULL, summary TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+ status TEXT NOT NULL DEFAULT 'queued'
+);
+CREATE TABLE IF NOT EXISTS digests (
+ id INTEGER PRIMARY KEY AUTOINCREMENT, day TEXT NOT NULL UNIQUE, body TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending',
+ created_at TEXT DEFAULT CURRENT_TIMESTAMP, published_at TEXT
+);
+CREATE TABLE IF NOT EXISTS events (
+ id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT NOT NULL, user_id INTEGER,
+ details TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_events_date ON events(created_at);
+CREATE INDEX IF NOT EXISTS idx_digests_status ON digests(status, created_at);
+CREATE TABLE IF NOT EXISTS ai_usage (
+ user_id INTEGER NOT NULL, day TEXT NOT NULL, calls INTEGER NOT NULL DEFAULT 0,
+ PRIMARY KEY (user_id, day)
+);
+CREATE TABLE IF NOT EXISTS control (
+ key TEXT PRIMARY KEY, value TEXT NOT NULL
+);
+INSERT OR IGNORE INTO control(key,value) VALUES ('publish_enabled','false'),('moderation_enabled','false'),('ai_enabled','false');
+CREATE TABLE IF NOT EXISTS processed_updates (
+ update_id INTEGER PRIMARY KEY, created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);

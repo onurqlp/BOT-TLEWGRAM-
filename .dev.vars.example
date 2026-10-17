@@ -1,0 +1,6 @@
+TELEGRAM_BOT_TOKEN=insert_token_locally
+TELEGRAM_WEBHOOK_SECRET=random_32_plus_characters
+TELEGRAM_GROUP_ID=-100XXXXXXXXXX
+ADMIN_USER_IDS=123456789
+PUBLIC_BASE_URL=https://your-worker.your-subdomain.workers.dev
+OPENAI_API_KEY=insert_openai_key_locally

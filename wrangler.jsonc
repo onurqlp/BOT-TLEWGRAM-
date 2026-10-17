@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "bot-tlewgram-v1",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "bot-tlewgram-db",
+    "database_id": "REPLACE_WITH_YOUR_D1_ID"
+  }],
+  "triggers": {"crons": ["0 7 * * *", "0 8 * * 1"]},
+  "vars": {
+    "AI_MODEL": "gpt-4.1-mini",
+    "GROUP_PUBLISH_ENABLED": "false",
+    "MODERATION_ENABLED": "false",
+    "AI_ENABLED": "false",
+    "NEWS_FEEDS": "",
+    "AI_DAILY_USER_LIMIT": "5",
+    "AI_MONTHLY_TOTAL_LIMIT": "1500"
+  }
+}
